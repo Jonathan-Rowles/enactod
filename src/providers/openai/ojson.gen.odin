@@ -5,26 +5,14 @@ import oj "../../../pkgs/ojson/jsonimpl"
 
 // Unmarshals JSON into OpenAI_Tool_Function
 // Source: openai (src/providers/openai/types.odin)
-unmarshal_open_ai_tool_function :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: OpenAI_Tool_Function,
-	err: oj.Error,
-) {
+unmarshal_open_ai_tool_function :: proc(r: ^oj.Reader, path: string = "") -> (result: OpenAI_Tool_Function, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_open_ai_tool_function_elem(r, elem)
 }
 
 // Unmarshals JSON element into OpenAI_Tool_Function
-unmarshal_open_ai_tool_function_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: OpenAI_Tool_Function,
-	err: oj.Error,
-) {
+unmarshal_open_ai_tool_function_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: OpenAI_Tool_Function, err: oj.Error) {
 	result.name, err = oj.read_string_elem(r, elem, "name")
 	if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
 
@@ -50,26 +38,14 @@ marshal_open_ai_tool_function :: proc(w: ^oj.Writer, value: OpenAI_Tool_Function
 
 // Unmarshals JSON into OpenAI_Tool_Call
 // Source: openai (src/providers/openai/types.odin)
-unmarshal_open_ai_tool_call :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: OpenAI_Tool_Call,
-	err: oj.Error,
-) {
+unmarshal_open_ai_tool_call :: proc(r: ^oj.Reader, path: string = "") -> (result: OpenAI_Tool_Call, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_open_ai_tool_call_elem(r, elem)
 }
 
 // Unmarshals JSON element into OpenAI_Tool_Call
-unmarshal_open_ai_tool_call_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: OpenAI_Tool_Call,
-	err: oj.Error,
-) {
+unmarshal_open_ai_tool_call_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: OpenAI_Tool_Call, err: oj.Error) {
 	result.id, err = oj.read_string_elem(r, elem, "id")
 	if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
 
@@ -105,26 +81,14 @@ marshal_open_ai_tool_call :: proc(w: ^oj.Writer, value: OpenAI_Tool_Call) {
 
 // Unmarshals JSON into OpenAI_Message
 // Source: openai (src/providers/openai/types.odin)
-unmarshal_open_ai_message :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: OpenAI_Message,
-	err: oj.Error,
-) {
+unmarshal_open_ai_message :: proc(r: ^oj.Reader, path: string = "") -> (result: OpenAI_Message, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_open_ai_message_elem(r, elem)
 }
 
 // Unmarshals JSON element into OpenAI_Message
-unmarshal_open_ai_message_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: OpenAI_Message,
-	err: oj.Error,
-) {
+unmarshal_open_ai_message_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: OpenAI_Message, err: oj.Error) {
 	result.role, err = oj.read_string_elem(r, elem, "role")
 	if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
 
@@ -166,37 +130,25 @@ marshal_open_ai_message :: proc(w: ^oj.Writer, value: OpenAI_Message) {
 	}
 	if len(value.tool_calls) > 0 {
 		oj.write_key(w, "tool_calls")
-		oj.write_array_start(w)
-		for item in value.tool_calls {
-			marshal_open_ai_tool_call(w, item)
-		}
-		oj.write_array_end(w)
+	oj.write_array_start(w)
+	for item in value.tool_calls {
+		marshal_open_ai_tool_call(w, item)
+	}
+	oj.write_array_end(w)
 	}
 	oj.write_object_end(w)
 }
 
 // Unmarshals JSON into OpenAI_Tool_Def_Function
 // Source: openai (src/providers/openai/types.odin)
-unmarshal_open_ai_tool_def_function :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: OpenAI_Tool_Def_Function,
-	err: oj.Error,
-) {
+unmarshal_open_ai_tool_def_function :: proc(r: ^oj.Reader, path: string = "") -> (result: OpenAI_Tool_Def_Function, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_open_ai_tool_def_function_elem(r, elem)
 }
 
 // Unmarshals JSON element into OpenAI_Tool_Def_Function
-unmarshal_open_ai_tool_def_function_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: OpenAI_Tool_Def_Function,
-	err: oj.Error,
-) {
+unmarshal_open_ai_tool_def_function_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: OpenAI_Tool_Def_Function, err: oj.Error) {
 	result.name, err = oj.read_string_elem(r, elem, "name")
 	if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
 
@@ -230,26 +182,14 @@ marshal_open_ai_tool_def_function :: proc(w: ^oj.Writer, value: OpenAI_Tool_Def_
 
 // Unmarshals JSON into OpenAI_Tool_Def
 // Source: openai (src/providers/openai/types.odin)
-unmarshal_open_ai_tool_def :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: OpenAI_Tool_Def,
-	err: oj.Error,
-) {
+unmarshal_open_ai_tool_def :: proc(r: ^oj.Reader, path: string = "") -> (result: OpenAI_Tool_Def, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_open_ai_tool_def_elem(r, elem)
 }
 
 // Unmarshals JSON element into OpenAI_Tool_Def
-unmarshal_open_ai_tool_def_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: OpenAI_Tool_Def,
-	err: oj.Error,
-) {
+unmarshal_open_ai_tool_def_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: OpenAI_Tool_Def, err: oj.Error) {
 	result.type, err = oj.read_string_elem(r, elem, "type")
 	if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
 
@@ -280,26 +220,14 @@ marshal_open_ai_tool_def :: proc(w: ^oj.Writer, value: OpenAI_Tool_Def) {
 
 // Unmarshals JSON into OpenAI_Request
 // Source: openai (src/providers/openai/types.odin)
-unmarshal_open_ai_request :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: OpenAI_Request,
-	err: oj.Error,
-) {
+unmarshal_open_ai_request :: proc(r: ^oj.Reader, path: string = "") -> (result: OpenAI_Request, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_open_ai_request_elem(r, elem)
 }
 
 // Unmarshals JSON element into OpenAI_Request
-unmarshal_open_ai_request_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: OpenAI_Request,
-	err: oj.Error,
-) {
+unmarshal_open_ai_request_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: OpenAI_Request, err: oj.Error) {
 	result.model, err = oj.read_string_elem(r, elem, "model")
 	if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
 
@@ -344,14 +272,7 @@ unmarshal_open_ai_request_elem :: proc(
 }
 
 is_zero_open_ai_request :: proc(v: OpenAI_Request) -> bool {
-	return(
-		v.model == "" &&
-		v.temperature == 0 &&
-		v.max_tokens == 0 &&
-		!v.stream &&
-		len(v.messages) == 0 &&
-		len(v.tools) == 0 \
-	)
+	return v.model == "" && v.temperature == 0 && v.max_tokens == 0 && !v.stream && len(v.messages) == 0 && len(v.tools) == 0
 }
 
 // Marshals OpenAI_Request to JSON
@@ -375,37 +296,25 @@ marshal_open_ai_request :: proc(w: ^oj.Writer, value: OpenAI_Request) {
 	oj.write_array_end(w)
 	if len(value.tools) > 0 {
 		oj.write_key(w, "tools")
-		oj.write_array_start(w)
-		for item in value.tools {
-			marshal_open_ai_tool_def(w, item)
-		}
-		oj.write_array_end(w)
+	oj.write_array_start(w)
+	for item in value.tools {
+		marshal_open_ai_tool_def(w, item)
+	}
+	oj.write_array_end(w)
 	}
 	oj.write_object_end(w)
 }
 
 // Unmarshals JSON into OpenAI_Response_Choice
 // Source: openai (src/providers/openai/types.odin)
-unmarshal_open_ai_response_choice :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: OpenAI_Response_Choice,
-	err: oj.Error,
-) {
+unmarshal_open_ai_response_choice :: proc(r: ^oj.Reader, path: string = "") -> (result: OpenAI_Response_Choice, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_open_ai_response_choice_elem(r, elem)
 }
 
 // Unmarshals JSON element into OpenAI_Response_Choice
-unmarshal_open_ai_response_choice_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: OpenAI_Response_Choice,
-	err: oj.Error,
-) {
+unmarshal_open_ai_response_choice_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: OpenAI_Response_Choice, err: oj.Error) {
 	result.finish_reason, err = oj.read_string_elem(r, elem, "finish_reason")
 	if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
 
@@ -436,26 +345,14 @@ marshal_open_ai_response_choice :: proc(w: ^oj.Writer, value: OpenAI_Response_Ch
 
 // Unmarshals JSON into OpenAI_Usage
 // Source: openai (src/providers/openai/types.odin)
-unmarshal_open_ai_usage :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: OpenAI_Usage,
-	err: oj.Error,
-) {
+unmarshal_open_ai_usage :: proc(r: ^oj.Reader, path: string = "") -> (result: OpenAI_Usage, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_open_ai_usage_elem(r, elem)
 }
 
 // Unmarshals JSON element into OpenAI_Usage
-unmarshal_open_ai_usage_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: OpenAI_Usage,
-	err: oj.Error,
-) {
+unmarshal_open_ai_usage_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: OpenAI_Usage, err: oj.Error) {
 	result.prompt_tokens, err = oj.read_int_elem(r, elem, "prompt_tokens")
 	if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
 
@@ -481,26 +378,14 @@ marshal_open_ai_usage :: proc(w: ^oj.Writer, value: OpenAI_Usage) {
 
 // Unmarshals JSON into OpenAI_Response
 // Source: openai (src/providers/openai/types.odin)
-unmarshal_open_ai_response :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: OpenAI_Response,
-	err: oj.Error,
-) {
+unmarshal_open_ai_response :: proc(r: ^oj.Reader, path: string = "") -> (result: OpenAI_Response, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_open_ai_response_elem(r, elem)
 }
 
 // Unmarshals JSON element into OpenAI_Response
-unmarshal_open_ai_response_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: OpenAI_Response,
-	err: oj.Error,
-) {
+unmarshal_open_ai_response_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: OpenAI_Response, err: oj.Error) {
 	{
 		arr_elem, arr_err := oj.obj_element_from(r, elem, "choices")
 		if arr_err == .OK {

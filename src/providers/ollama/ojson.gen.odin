@@ -5,26 +5,14 @@ import oj "../../../pkgs/ojson/jsonimpl"
 
 // Unmarshals JSON into Ollama_Tool_Call_Function
 // Source: ollama (src/providers/ollama/types.odin)
-unmarshal_ollama_tool_call_function :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: Ollama_Tool_Call_Function,
-	err: oj.Error,
-) {
+unmarshal_ollama_tool_call_function :: proc(r: ^oj.Reader, path: string = "") -> (result: Ollama_Tool_Call_Function, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_ollama_tool_call_function_elem(r, elem)
 }
 
 // Unmarshals JSON element into Ollama_Tool_Call_Function
-unmarshal_ollama_tool_call_function_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: Ollama_Tool_Call_Function,
-	err: oj.Error,
-) {
+unmarshal_ollama_tool_call_function_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: Ollama_Tool_Call_Function, err: oj.Error) {
 	result.name, err = oj.read_string_elem(r, elem, "name")
 	if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
 
@@ -53,26 +41,14 @@ marshal_ollama_tool_call_function :: proc(w: ^oj.Writer, value: Ollama_Tool_Call
 
 // Unmarshals JSON into Ollama_Tool_Call
 // Source: ollama (src/providers/ollama/types.odin)
-unmarshal_ollama_tool_call :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: Ollama_Tool_Call,
-	err: oj.Error,
-) {
+unmarshal_ollama_tool_call :: proc(r: ^oj.Reader, path: string = "") -> (result: Ollama_Tool_Call, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_ollama_tool_call_elem(r, elem)
 }
 
 // Unmarshals JSON element into Ollama_Tool_Call
-unmarshal_ollama_tool_call_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: Ollama_Tool_Call,
-	err: oj.Error,
-) {
+unmarshal_ollama_tool_call_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: Ollama_Tool_Call, err: oj.Error) {
 	result.id, err = oj.read_string_elem(r, elem, "id")
 	if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
 
@@ -103,26 +79,14 @@ marshal_ollama_tool_call :: proc(w: ^oj.Writer, value: Ollama_Tool_Call) {
 
 // Unmarshals JSON into Ollama_Message
 // Source: ollama (src/providers/ollama/types.odin)
-unmarshal_ollama_message :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: Ollama_Message,
-	err: oj.Error,
-) {
+unmarshal_ollama_message :: proc(r: ^oj.Reader, path: string = "") -> (result: Ollama_Message, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_ollama_message_elem(r, elem)
 }
 
 // Unmarshals JSON element into Ollama_Message
-unmarshal_ollama_message_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: Ollama_Message,
-	err: oj.Error,
-) {
+unmarshal_ollama_message_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: Ollama_Message, err: oj.Error) {
 	result.role, err = oj.read_string_elem(r, elem, "role")
 	if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
 
@@ -164,37 +128,25 @@ marshal_ollama_message :: proc(w: ^oj.Writer, value: Ollama_Message) {
 	}
 	if len(value.tool_calls) > 0 {
 		oj.write_key(w, "tool_calls")
-		oj.write_array_start(w)
-		for item in value.tool_calls {
-			marshal_ollama_tool_call(w, item)
-		}
-		oj.write_array_end(w)
+	oj.write_array_start(w)
+	for item in value.tool_calls {
+		marshal_ollama_tool_call(w, item)
+	}
+	oj.write_array_end(w)
 	}
 	oj.write_object_end(w)
 }
 
 // Unmarshals JSON into Ollama_Tool_Def_Function
 // Source: ollama (src/providers/ollama/types.odin)
-unmarshal_ollama_tool_def_function :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: Ollama_Tool_Def_Function,
-	err: oj.Error,
-) {
+unmarshal_ollama_tool_def_function :: proc(r: ^oj.Reader, path: string = "") -> (result: Ollama_Tool_Def_Function, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_ollama_tool_def_function_elem(r, elem)
 }
 
 // Unmarshals JSON element into Ollama_Tool_Def_Function
-unmarshal_ollama_tool_def_function_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: Ollama_Tool_Def_Function,
-	err: oj.Error,
-) {
+unmarshal_ollama_tool_def_function_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: Ollama_Tool_Def_Function, err: oj.Error) {
 	result.name, err = oj.read_string_elem(r, elem, "name")
 	if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
 
@@ -228,26 +180,14 @@ marshal_ollama_tool_def_function :: proc(w: ^oj.Writer, value: Ollama_Tool_Def_F
 
 // Unmarshals JSON into Ollama_Tool_Def
 // Source: ollama (src/providers/ollama/types.odin)
-unmarshal_ollama_tool_def :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: Ollama_Tool_Def,
-	err: oj.Error,
-) {
+unmarshal_ollama_tool_def :: proc(r: ^oj.Reader, path: string = "") -> (result: Ollama_Tool_Def, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_ollama_tool_def_elem(r, elem)
 }
 
 // Unmarshals JSON element into Ollama_Tool_Def
-unmarshal_ollama_tool_def_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: Ollama_Tool_Def,
-	err: oj.Error,
-) {
+unmarshal_ollama_tool_def_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: Ollama_Tool_Def, err: oj.Error) {
 	result.type, err = oj.read_string_elem(r, elem, "type")
 	if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
 
@@ -278,26 +218,14 @@ marshal_ollama_tool_def :: proc(w: ^oj.Writer, value: Ollama_Tool_Def) {
 
 // Unmarshals JSON into Ollama_Options
 // Source: ollama (src/providers/ollama/types.odin)
-unmarshal_ollama_options :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: Ollama_Options,
-	err: oj.Error,
-) {
+unmarshal_ollama_options :: proc(r: ^oj.Reader, path: string = "") -> (result: Ollama_Options, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_ollama_options_elem(r, elem)
 }
 
 // Unmarshals JSON element into Ollama_Options
-unmarshal_ollama_options_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: Ollama_Options,
-	err: oj.Error,
-) {
+unmarshal_ollama_options_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: Ollama_Options, err: oj.Error) {
 	result.num_ctx, err = oj.read_int_elem(r, elem, "num_ctx")
 	if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
 
@@ -331,26 +259,14 @@ marshal_ollama_options :: proc(w: ^oj.Writer, value: Ollama_Options) {
 
 // Unmarshals JSON into Ollama_Request
 // Source: ollama (src/providers/ollama/types.odin)
-unmarshal_ollama_request :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: Ollama_Request,
-	err: oj.Error,
-) {
+unmarshal_ollama_request :: proc(r: ^oj.Reader, path: string = "") -> (result: Ollama_Request, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_ollama_request_elem(r, elem)
 }
 
 // Unmarshals JSON element into Ollama_Request
-unmarshal_ollama_request_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: Ollama_Request,
-	err: oj.Error,
-) {
+unmarshal_ollama_request_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: Ollama_Request, err: oj.Error) {
 	result.model, err = oj.read_string_elem(r, elem, "model")
 	if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
 
@@ -399,14 +315,7 @@ unmarshal_ollama_request_elem :: proc(
 }
 
 is_zero_ollama_request :: proc(v: Ollama_Request) -> bool {
-	return(
-		v.model == "" &&
-		!v.stream &&
-		v.think == "" &&
-		len(v.messages) == 0 &&
-		len(v.tools) == 0 &&
-		is_zero_ollama_options(v.options) \
-	)
+	return v.model == "" && !v.stream && v.think == "" && len(v.messages) == 0 && len(v.tools) == 0 && is_zero_ollama_options(v.options)
 }
 
 // Marshals Ollama_Request to JSON
@@ -428,11 +337,11 @@ marshal_ollama_request :: proc(w: ^oj.Writer, value: Ollama_Request) {
 	oj.write_array_end(w)
 	if len(value.tools) > 0 {
 		oj.write_key(w, "tools")
-		oj.write_array_start(w)
-		for item in value.tools {
-			marshal_ollama_tool_def(w, item)
-		}
-		oj.write_array_end(w)
+	oj.write_array_start(w)
+	for item in value.tools {
+		marshal_ollama_tool_def(w, item)
+	}
+	oj.write_array_end(w)
 	}
 	if !is_zero_ollama_options(value.options) {
 		oj.write_key(w, "options")
@@ -443,26 +352,14 @@ marshal_ollama_request :: proc(w: ^oj.Writer, value: Ollama_Request) {
 
 // Unmarshals JSON into Ollama_Response
 // Source: ollama (src/providers/ollama/types.odin)
-unmarshal_ollama_response :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: Ollama_Response,
-	err: oj.Error,
-) {
+unmarshal_ollama_response :: proc(r: ^oj.Reader, path: string = "") -> (result: Ollama_Response, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_ollama_response_elem(r, elem)
 }
 
 // Unmarshals JSON element into Ollama_Response
-unmarshal_ollama_response_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: Ollama_Response,
-	err: oj.Error,
-) {
+unmarshal_ollama_response_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: Ollama_Response, err: oj.Error) {
 	result.done_reason, err = oj.read_string_elem(r, elem, "done_reason")
 	if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
 
@@ -484,12 +381,7 @@ unmarshal_ollama_response_elem :: proc(
 }
 
 is_zero_ollama_response :: proc(v: Ollama_Response) -> bool {
-	return(
-		v.done_reason == "" &&
-		is_zero_ollama_message(v.message) &&
-		v.prompt_eval_count == 0 &&
-		v.eval_count == 0 \
-	)
+	return v.done_reason == "" && is_zero_ollama_message(v.message) && v.prompt_eval_count == 0 && v.eval_count == 0
 }
 
 // Marshals Ollama_Response to JSON

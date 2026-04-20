@@ -5,26 +5,14 @@ import oj "../../../pkgs/ojson/jsonimpl"
 
 // Unmarshals JSON into Gemini_Function_Call
 // Source: gemini (src/providers/gemini/types.odin)
-unmarshal_gemini_function_call :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: Gemini_Function_Call,
-	err: oj.Error,
-) {
+unmarshal_gemini_function_call :: proc(r: ^oj.Reader, path: string = "") -> (result: Gemini_Function_Call, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_gemini_function_call_elem(r, elem)
 }
 
 // Unmarshals JSON element into Gemini_Function_Call
-unmarshal_gemini_function_call_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: Gemini_Function_Call,
-	err: oj.Error,
-) {
+unmarshal_gemini_function_call_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: Gemini_Function_Call, err: oj.Error) {
 	result.name, err = oj.read_string_elem(r, elem, "name")
 	if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
 
@@ -53,26 +41,14 @@ marshal_gemini_function_call :: proc(w: ^oj.Writer, value: Gemini_Function_Call)
 
 // Unmarshals JSON into Gemini_Function_Response_Body
 // Source: gemini (src/providers/gemini/types.odin)
-unmarshal_gemini_function_response_body :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: Gemini_Function_Response_Body,
-	err: oj.Error,
-) {
+unmarshal_gemini_function_response_body :: proc(r: ^oj.Reader, path: string = "") -> (result: Gemini_Function_Response_Body, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_gemini_function_response_body_elem(r, elem)
 }
 
 // Unmarshals JSON element into Gemini_Function_Response_Body
-unmarshal_gemini_function_response_body_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: Gemini_Function_Response_Body,
-	err: oj.Error,
-) {
+unmarshal_gemini_function_response_body_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: Gemini_Function_Response_Body, err: oj.Error) {
 	result.result, err = oj.read_string_elem(r, elem, "result")
 	if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
 
@@ -84,10 +60,7 @@ is_zero_gemini_function_response_body :: proc(v: Gemini_Function_Response_Body) 
 }
 
 // Marshals Gemini_Function_Response_Body to JSON
-marshal_gemini_function_response_body :: proc(
-	w: ^oj.Writer,
-	value: Gemini_Function_Response_Body,
-) {
+marshal_gemini_function_response_body :: proc(w: ^oj.Writer, value: Gemini_Function_Response_Body) {
 	oj.write_object_start(w)
 	oj.write_key(w, "result")
 	oj.write_string(w, value.result)
@@ -96,26 +69,14 @@ marshal_gemini_function_response_body :: proc(
 
 // Unmarshals JSON into Gemini_Function_Response
 // Source: gemini (src/providers/gemini/types.odin)
-unmarshal_gemini_function_response :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: Gemini_Function_Response,
-	err: oj.Error,
-) {
+unmarshal_gemini_function_response :: proc(r: ^oj.Reader, path: string = "") -> (result: Gemini_Function_Response, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_gemini_function_response_elem(r, elem)
 }
 
 // Unmarshals JSON element into Gemini_Function_Response
-unmarshal_gemini_function_response_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: Gemini_Function_Response,
-	err: oj.Error,
-) {
+unmarshal_gemini_function_response_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: Gemini_Function_Response, err: oj.Error) {
 	result.name, err = oj.read_string_elem(r, elem, "name")
 	if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
 
@@ -146,26 +107,14 @@ marshal_gemini_function_response :: proc(w: ^oj.Writer, value: Gemini_Function_R
 
 // Unmarshals JSON into Gemini_Part
 // Source: gemini (src/providers/gemini/types.odin)
-unmarshal_gemini_part :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: Gemini_Part,
-	err: oj.Error,
-) {
+unmarshal_gemini_part :: proc(r: ^oj.Reader, path: string = "") -> (result: Gemini_Part, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_gemini_part_elem(r, elem)
 }
 
 // Unmarshals JSON element into Gemini_Part
-unmarshal_gemini_part_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: Gemini_Part,
-	err: oj.Error,
-) {
+unmarshal_gemini_part_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: Gemini_Part, err: oj.Error) {
 	result.text, err = oj.read_string_elem(r, elem, "text")
 	if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
 
@@ -192,12 +141,7 @@ unmarshal_gemini_part_elem :: proc(
 }
 
 is_zero_gemini_part :: proc(v: Gemini_Part) -> bool {
-	return(
-		v.text == "" &&
-		!v.thought &&
-		is_zero_gemini_function_call(v.function_call) &&
-		is_zero_gemini_function_response(v.function_response) \
-	)
+	return v.text == "" && !v.thought && is_zero_gemini_function_call(v.function_call) && is_zero_gemini_function_response(v.function_response)
 }
 
 // Marshals Gemini_Part to JSON
@@ -224,26 +168,14 @@ marshal_gemini_part :: proc(w: ^oj.Writer, value: Gemini_Part) {
 
 // Unmarshals JSON into Gemini_Content
 // Source: gemini (src/providers/gemini/types.odin)
-unmarshal_gemini_content :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: Gemini_Content,
-	err: oj.Error,
-) {
+unmarshal_gemini_content :: proc(r: ^oj.Reader, path: string = "") -> (result: Gemini_Content, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_gemini_content_elem(r, elem)
 }
 
 // Unmarshals JSON element into Gemini_Content
-unmarshal_gemini_content_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: Gemini_Content,
-	err: oj.Error,
-) {
+unmarshal_gemini_content_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: Gemini_Content, err: oj.Error) {
 	result.role, err = oj.read_string_elem(r, elem, "role")
 	if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
 
@@ -284,26 +216,14 @@ marshal_gemini_content :: proc(w: ^oj.Writer, value: Gemini_Content) {
 
 // Unmarshals JSON into Gemini_System_Instruction
 // Source: gemini (src/providers/gemini/types.odin)
-unmarshal_gemini_system_instruction :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: Gemini_System_Instruction,
-	err: oj.Error,
-) {
+unmarshal_gemini_system_instruction :: proc(r: ^oj.Reader, path: string = "") -> (result: Gemini_System_Instruction, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_gemini_system_instruction_elem(r, elem)
 }
 
 // Unmarshals JSON element into Gemini_System_Instruction
-unmarshal_gemini_system_instruction_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: Gemini_System_Instruction,
-	err: oj.Error,
-) {
+unmarshal_gemini_system_instruction_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: Gemini_System_Instruction, err: oj.Error) {
 	{
 		arr_elem, arr_err := oj.obj_element_from(r, elem, "parts")
 		if arr_err == .OK {
@@ -337,26 +257,14 @@ marshal_gemini_system_instruction :: proc(w: ^oj.Writer, value: Gemini_System_In
 
 // Unmarshals JSON into Gemini_Tool_Declaration
 // Source: gemini (src/providers/gemini/types.odin)
-unmarshal_gemini_tool_declaration :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: Gemini_Tool_Declaration,
-	err: oj.Error,
-) {
+unmarshal_gemini_tool_declaration :: proc(r: ^oj.Reader, path: string = "") -> (result: Gemini_Tool_Declaration, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_gemini_tool_declaration_elem(r, elem)
 }
 
 // Unmarshals JSON element into Gemini_Tool_Declaration
-unmarshal_gemini_tool_declaration_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: Gemini_Tool_Declaration,
-	err: oj.Error,
-) {
+unmarshal_gemini_tool_declaration_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: Gemini_Tool_Declaration, err: oj.Error) {
 	result.name, err = oj.read_string_elem(r, elem, "name")
 	if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
 
@@ -390,36 +298,21 @@ marshal_gemini_tool_declaration :: proc(w: ^oj.Writer, value: Gemini_Tool_Declar
 
 // Unmarshals JSON into Gemini_Tool
 // Source: gemini (src/providers/gemini/types.odin)
-unmarshal_gemini_tool :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: Gemini_Tool,
-	err: oj.Error,
-) {
+unmarshal_gemini_tool :: proc(r: ^oj.Reader, path: string = "") -> (result: Gemini_Tool, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_gemini_tool_elem(r, elem)
 }
 
 // Unmarshals JSON element into Gemini_Tool
-unmarshal_gemini_tool_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: Gemini_Tool,
-	err: oj.Error,
-) {
+unmarshal_gemini_tool_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: Gemini_Tool, err: oj.Error) {
 	{
 		arr_elem, arr_err := oj.obj_element_from(r, elem, "functionDeclarations")
 		if arr_err == .OK {
 			items, _ := oj.array_elements_from(r, arr_elem)
 			result.function_declarations = make([]Gemini_Tool_Declaration, len(items))
 			for item_elem, i in items {
-				result.function_declarations[i], err = unmarshal_gemini_tool_declaration_elem(
-					r,
-					item_elem,
-				)
+				result.function_declarations[i], err = unmarshal_gemini_tool_declaration_elem(r, item_elem)
 				if err != .OK do return
 			}
 		}
@@ -446,26 +339,14 @@ marshal_gemini_tool :: proc(w: ^oj.Writer, value: Gemini_Tool) {
 
 // Unmarshals JSON into Gemini_Generation_Config
 // Source: gemini (src/providers/gemini/types.odin)
-unmarshal_gemini_generation_config :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: Gemini_Generation_Config,
-	err: oj.Error,
-) {
+unmarshal_gemini_generation_config :: proc(r: ^oj.Reader, path: string = "") -> (result: Gemini_Generation_Config, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_gemini_generation_config_elem(r, elem)
 }
 
 // Unmarshals JSON element into Gemini_Generation_Config
-unmarshal_gemini_generation_config_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: Gemini_Generation_Config,
-	err: oj.Error,
-) {
+unmarshal_gemini_generation_config_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: Gemini_Generation_Config, err: oj.Error) {
 	{
 		val: f64
 		val, err = oj.read_f64_elem(r, elem, "temperature")
@@ -505,33 +386,18 @@ marshal_gemini_generation_config :: proc(w: ^oj.Writer, value: Gemini_Generation
 
 // Unmarshals JSON into Gemini_Request
 // Source: gemini (src/providers/gemini/types.odin)
-unmarshal_gemini_request :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: Gemini_Request,
-	err: oj.Error,
-) {
+unmarshal_gemini_request :: proc(r: ^oj.Reader, path: string = "") -> (result: Gemini_Request, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_gemini_request_elem(r, elem)
 }
 
 // Unmarshals JSON element into Gemini_Request
-unmarshal_gemini_request_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: Gemini_Request,
-	err: oj.Error,
-) {
+unmarshal_gemini_request_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: Gemini_Request, err: oj.Error) {
 	{
 		nested_elem, nested_err := oj.obj_element_from(r, elem, "systemInstruction")
 		if nested_err == .OK {
-			result.system_instruction, err = unmarshal_gemini_system_instruction_elem(
-				r,
-				nested_elem,
-			)
+			result.system_instruction, err = unmarshal_gemini_system_instruction_elem(r, nested_elem)
 			if err != .OK do return
 		}
 	}
@@ -572,12 +438,7 @@ unmarshal_gemini_request_elem :: proc(
 }
 
 is_zero_gemini_request :: proc(v: Gemini_Request) -> bool {
-	return(
-		is_zero_gemini_system_instruction(v.system_instruction) &&
-		len(v.contents) == 0 &&
-		len(v.tools) == 0 &&
-		is_zero_gemini_generation_config(v.generation_config) \
-	)
+	return is_zero_gemini_system_instruction(v.system_instruction) && len(v.contents) == 0 && len(v.tools) == 0 && is_zero_gemini_generation_config(v.generation_config)
 }
 
 // Marshals Gemini_Request to JSON
@@ -595,11 +456,11 @@ marshal_gemini_request :: proc(w: ^oj.Writer, value: Gemini_Request) {
 	oj.write_array_end(w)
 	if len(value.tools) > 0 {
 		oj.write_key(w, "tools")
-		oj.write_array_start(w)
-		for item in value.tools {
-			marshal_gemini_tool(w, item)
-		}
-		oj.write_array_end(w)
+	oj.write_array_start(w)
+	for item in value.tools {
+		marshal_gemini_tool(w, item)
+	}
+	oj.write_array_end(w)
 	}
 	oj.write_key(w, "generationConfig")
 	marshal_gemini_generation_config(w, value.generation_config)
@@ -608,26 +469,14 @@ marshal_gemini_request :: proc(w: ^oj.Writer, value: Gemini_Request) {
 
 // Unmarshals JSON into Gemini_Candidate
 // Source: gemini (src/providers/gemini/types.odin)
-unmarshal_gemini_candidate :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: Gemini_Candidate,
-	err: oj.Error,
-) {
+unmarshal_gemini_candidate :: proc(r: ^oj.Reader, path: string = "") -> (result: Gemini_Candidate, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_gemini_candidate_elem(r, elem)
 }
 
 // Unmarshals JSON element into Gemini_Candidate
-unmarshal_gemini_candidate_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: Gemini_Candidate,
-	err: oj.Error,
-) {
+unmarshal_gemini_candidate_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: Gemini_Candidate, err: oj.Error) {
 	{
 		nested_elem, nested_err := oj.obj_element_from(r, elem, "content")
 		if nested_err == .OK {
@@ -658,26 +507,14 @@ marshal_gemini_candidate :: proc(w: ^oj.Writer, value: Gemini_Candidate) {
 
 // Unmarshals JSON into Gemini_Usage_Metadata
 // Source: gemini (src/providers/gemini/types.odin)
-unmarshal_gemini_usage_metadata :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: Gemini_Usage_Metadata,
-	err: oj.Error,
-) {
+unmarshal_gemini_usage_metadata :: proc(r: ^oj.Reader, path: string = "") -> (result: Gemini_Usage_Metadata, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_gemini_usage_metadata_elem(r, elem)
 }
 
 // Unmarshals JSON element into Gemini_Usage_Metadata
-unmarshal_gemini_usage_metadata_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: Gemini_Usage_Metadata,
-	err: oj.Error,
-) {
+unmarshal_gemini_usage_metadata_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: Gemini_Usage_Metadata, err: oj.Error) {
 	result.prompt_token_count, err = oj.read_int_elem(r, elem, "promptTokenCount")
 	if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
 
@@ -694,12 +531,7 @@ unmarshal_gemini_usage_metadata_elem :: proc(
 }
 
 is_zero_gemini_usage_metadata :: proc(v: Gemini_Usage_Metadata) -> bool {
-	return(
-		v.prompt_token_count == 0 &&
-		v.candidates_token_count == 0 &&
-		v.cached_content_token_count == 0 &&
-		v.thoughts_token_count == 0 \
-	)
+	return v.prompt_token_count == 0 && v.candidates_token_count == 0 && v.cached_content_token_count == 0 && v.thoughts_token_count == 0
 }
 
 // Marshals Gemini_Usage_Metadata to JSON
@@ -718,26 +550,14 @@ marshal_gemini_usage_metadata :: proc(w: ^oj.Writer, value: Gemini_Usage_Metadat
 
 // Unmarshals JSON into Gemini_Response
 // Source: gemini (src/providers/gemini/types.odin)
-unmarshal_gemini_response :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: Gemini_Response,
-	err: oj.Error,
-) {
+unmarshal_gemini_response :: proc(r: ^oj.Reader, path: string = "") -> (result: Gemini_Response, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_gemini_response_elem(r, elem)
 }
 
 // Unmarshals JSON element into Gemini_Response
-unmarshal_gemini_response_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: Gemini_Response,
-	err: oj.Error,
-) {
+unmarshal_gemini_response_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: Gemini_Response, err: oj.Error) {
 	{
 		arr_elem, arr_err := oj.obj_element_from(r, elem, "candidates")
 		if arr_err == .OK {

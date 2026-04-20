@@ -5,26 +5,14 @@ import oj "../../../pkgs/ojson/jsonimpl"
 
 // Unmarshals JSON into Anthropic_Content_Block (tagged union)
 // Source: anthropic (src/providers/anthropic/types.odin)
-unmarshal_anthropic_content_block :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: Anthropic_Content_Block,
-	err: oj.Error,
-) {
+unmarshal_anthropic_content_block :: proc(r: ^oj.Reader, path: string = "") -> (result: Anthropic_Content_Block, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_anthropic_content_block_elem(r, elem)
 }
 
 // Unmarshals JSON element into Anthropic_Content_Block (tagged union)
-unmarshal_anthropic_content_block_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: Anthropic_Content_Block,
-	err: oj.Error,
-) {
+unmarshal_anthropic_content_block_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: Anthropic_Content_Block, err: oj.Error) {
 	discr, _ := oj.read_string_elem(r, elem, "type")
 	switch discr {
 	case "text":
@@ -63,26 +51,14 @@ marshal_anthropic_content_block :: proc(w: ^oj.Writer, value: Anthropic_Content_
 
 // Unmarshals JSON into Anthropic_Cache_Control
 // Source: anthropic (src/providers/anthropic/types.odin)
-unmarshal_anthropic_cache_control :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: Anthropic_Cache_Control,
-	err: oj.Error,
-) {
+unmarshal_anthropic_cache_control :: proc(r: ^oj.Reader, path: string = "") -> (result: Anthropic_Cache_Control, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_anthropic_cache_control_elem(r, elem)
 }
 
 // Unmarshals JSON element into Anthropic_Cache_Control
-unmarshal_anthropic_cache_control_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: Anthropic_Cache_Control,
-	err: oj.Error,
-) {
+unmarshal_anthropic_cache_control_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: Anthropic_Cache_Control, err: oj.Error) {
 	result.type, err = oj.read_string_elem(r, elem, "type")
 	if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
 
@@ -103,26 +79,14 @@ marshal_anthropic_cache_control :: proc(w: ^oj.Writer, value: Anthropic_Cache_Co
 
 // Unmarshals JSON into Anthropic_Thinking
 // Source: anthropic (src/providers/anthropic/types.odin)
-unmarshal_anthropic_thinking :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: Anthropic_Thinking,
-	err: oj.Error,
-) {
+unmarshal_anthropic_thinking :: proc(r: ^oj.Reader, path: string = "") -> (result: Anthropic_Thinking, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_anthropic_thinking_elem(r, elem)
 }
 
 // Unmarshals JSON element into Anthropic_Thinking
-unmarshal_anthropic_thinking_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: Anthropic_Thinking,
-	err: oj.Error,
-) {
+unmarshal_anthropic_thinking_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: Anthropic_Thinking, err: oj.Error) {
 	result.type, err = oj.read_string_elem(r, elem, "type")
 	if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
 
@@ -148,26 +112,14 @@ marshal_anthropic_thinking :: proc(w: ^oj.Writer, value: Anthropic_Thinking) {
 
 // Unmarshals JSON into Anthropic_Text_Block
 // Source: anthropic (src/providers/anthropic/types.odin)
-unmarshal_anthropic_text_block :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: Anthropic_Text_Block,
-	err: oj.Error,
-) {
+unmarshal_anthropic_text_block :: proc(r: ^oj.Reader, path: string = "") -> (result: Anthropic_Text_Block, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_anthropic_text_block_elem(r, elem)
 }
 
 // Unmarshals JSON element into Anthropic_Text_Block
-unmarshal_anthropic_text_block_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: Anthropic_Text_Block,
-	err: oj.Error,
-) {
+unmarshal_anthropic_text_block_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: Anthropic_Text_Block, err: oj.Error) {
 	result.type, err = oj.read_string_elem(r, elem, "type")
 	if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
 
@@ -205,26 +157,14 @@ marshal_anthropic_text_block :: proc(w: ^oj.Writer, value: Anthropic_Text_Block)
 
 // Unmarshals JSON into Anthropic_Thinking_Block
 // Source: anthropic (src/providers/anthropic/types.odin)
-unmarshal_anthropic_thinking_block :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: Anthropic_Thinking_Block,
-	err: oj.Error,
-) {
+unmarshal_anthropic_thinking_block :: proc(r: ^oj.Reader, path: string = "") -> (result: Anthropic_Thinking_Block, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_anthropic_thinking_block_elem(r, elem)
 }
 
 // Unmarshals JSON element into Anthropic_Thinking_Block
-unmarshal_anthropic_thinking_block_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: Anthropic_Thinking_Block,
-	err: oj.Error,
-) {
+unmarshal_anthropic_thinking_block_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: Anthropic_Thinking_Block, err: oj.Error) {
 	result.type, err = oj.read_string_elem(r, elem, "type")
 	if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
 
@@ -255,26 +195,14 @@ marshal_anthropic_thinking_block :: proc(w: ^oj.Writer, value: Anthropic_Thinkin
 
 // Unmarshals JSON into Anthropic_Tool_Use_Block
 // Source: anthropic (src/providers/anthropic/types.odin)
-unmarshal_anthropic_tool_use_block :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: Anthropic_Tool_Use_Block,
-	err: oj.Error,
-) {
+unmarshal_anthropic_tool_use_block :: proc(r: ^oj.Reader, path: string = "") -> (result: Anthropic_Tool_Use_Block, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_anthropic_tool_use_block_elem(r, elem)
 }
 
 // Unmarshals JSON element into Anthropic_Tool_Use_Block
-unmarshal_anthropic_tool_use_block_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: Anthropic_Tool_Use_Block,
-	err: oj.Error,
-) {
+unmarshal_anthropic_tool_use_block_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: Anthropic_Tool_Use_Block, err: oj.Error) {
 	result.type, err = oj.read_string_elem(r, elem, "type")
 	if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
 
@@ -313,26 +241,14 @@ marshal_anthropic_tool_use_block :: proc(w: ^oj.Writer, value: Anthropic_Tool_Us
 
 // Unmarshals JSON into Anthropic_Tool_Result_Block
 // Source: anthropic (src/providers/anthropic/types.odin)
-unmarshal_anthropic_tool_result_block :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: Anthropic_Tool_Result_Block,
-	err: oj.Error,
-) {
+unmarshal_anthropic_tool_result_block :: proc(r: ^oj.Reader, path: string = "") -> (result: Anthropic_Tool_Result_Block, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_anthropic_tool_result_block_elem(r, elem)
 }
 
 // Unmarshals JSON element into Anthropic_Tool_Result_Block
-unmarshal_anthropic_tool_result_block_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: Anthropic_Tool_Result_Block,
-	err: oj.Error,
-) {
+unmarshal_anthropic_tool_result_block_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: Anthropic_Tool_Result_Block, err: oj.Error) {
 	result.type, err = oj.read_string_elem(r, elem, "type")
 	if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
 
@@ -363,26 +279,14 @@ marshal_anthropic_tool_result_block :: proc(w: ^oj.Writer, value: Anthropic_Tool
 
 // Unmarshals JSON into Anthropic_Message
 // Source: anthropic (src/providers/anthropic/types.odin)
-unmarshal_anthropic_message :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: Anthropic_Message,
-	err: oj.Error,
-) {
+unmarshal_anthropic_message :: proc(r: ^oj.Reader, path: string = "") -> (result: Anthropic_Message, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_anthropic_message_elem(r, elem)
 }
 
 // Unmarshals JSON element into Anthropic_Message
-unmarshal_anthropic_message_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: Anthropic_Message,
-	err: oj.Error,
-) {
+unmarshal_anthropic_message_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: Anthropic_Message, err: oj.Error) {
 	result.role, err = oj.read_string_elem(r, elem, "role")
 	if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
 
@@ -421,26 +325,14 @@ marshal_anthropic_message :: proc(w: ^oj.Writer, value: Anthropic_Message) {
 
 // Unmarshals JSON into Anthropic_Tool
 // Source: anthropic (src/providers/anthropic/types.odin)
-unmarshal_anthropic_tool :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: Anthropic_Tool,
-	err: oj.Error,
-) {
+unmarshal_anthropic_tool :: proc(r: ^oj.Reader, path: string = "") -> (result: Anthropic_Tool, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_anthropic_tool_elem(r, elem)
 }
 
 // Unmarshals JSON element into Anthropic_Tool
-unmarshal_anthropic_tool_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: Anthropic_Tool,
-	err: oj.Error,
-) {
+unmarshal_anthropic_tool_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: Anthropic_Tool, err: oj.Error) {
 	result.name, err = oj.read_string_elem(r, elem, "name")
 	if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
 
@@ -465,12 +357,7 @@ unmarshal_anthropic_tool_elem :: proc(
 }
 
 is_zero_anthropic_tool :: proc(v: Anthropic_Tool) -> bool {
-	return(
-		v.name == "" &&
-		v.description == "" &&
-		v.input_schema == "" &&
-		is_zero_anthropic_cache_control(v.cache_control) \
-	)
+	return v.name == "" && v.description == "" && v.input_schema == "" && is_zero_anthropic_cache_control(v.cache_control)
 }
 
 // Marshals Anthropic_Tool to JSON
@@ -491,26 +378,14 @@ marshal_anthropic_tool :: proc(w: ^oj.Writer, value: Anthropic_Tool) {
 
 // Unmarshals JSON into Anthropic_Request
 // Source: anthropic (src/providers/anthropic/types.odin)
-unmarshal_anthropic_request :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: Anthropic_Request,
-	err: oj.Error,
-) {
+unmarshal_anthropic_request :: proc(r: ^oj.Reader, path: string = "") -> (result: Anthropic_Request, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_anthropic_request_elem(r, elem)
 }
 
 // Unmarshals JSON element into Anthropic_Request
-unmarshal_anthropic_request_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: Anthropic_Request,
-	err: oj.Error,
-) {
+unmarshal_anthropic_request_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: Anthropic_Request, err: oj.Error) {
 	result.model, err = oj.read_string_elem(r, elem, "model")
 	if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
 
@@ -574,16 +449,7 @@ unmarshal_anthropic_request_elem :: proc(
 }
 
 is_zero_anthropic_request :: proc(v: Anthropic_Request) -> bool {
-	return(
-		v.model == "" &&
-		v.max_tokens == 0 &&
-		v.temperature == "" &&
-		is_zero_anthropic_thinking(v.thinking) &&
-		!v.stream &&
-		len(v.system) == 0 &&
-		len(v.messages) == 0 &&
-		len(v.tools) == 0 \
-	)
+	return v.model == "" && v.max_tokens == 0 && v.temperature == "" && is_zero_anthropic_thinking(v.thinking) && !v.stream && len(v.system) == 0 && len(v.messages) == 0 && len(v.tools) == 0
 }
 
 // Marshals Anthropic_Request to JSON
@@ -607,11 +473,11 @@ marshal_anthropic_request :: proc(w: ^oj.Writer, value: Anthropic_Request) {
 	}
 	if len(value.system) > 0 {
 		oj.write_key(w, "system")
-		oj.write_array_start(w)
-		for item in value.system {
-			marshal_anthropic_text_block(w, item)
-		}
-		oj.write_array_end(w)
+	oj.write_array_start(w)
+	for item in value.system {
+		marshal_anthropic_text_block(w, item)
+	}
+	oj.write_array_end(w)
 	}
 	oj.write_key(w, "messages")
 	oj.write_array_start(w)
@@ -621,48 +487,32 @@ marshal_anthropic_request :: proc(w: ^oj.Writer, value: Anthropic_Request) {
 	oj.write_array_end(w)
 	if len(value.tools) > 0 {
 		oj.write_key(w, "tools")
-		oj.write_array_start(w)
-		for item in value.tools {
-			marshal_anthropic_tool(w, item)
-		}
-		oj.write_array_end(w)
+	oj.write_array_start(w)
+	for item in value.tools {
+		marshal_anthropic_tool(w, item)
+	}
+	oj.write_array_end(w)
 	}
 	oj.write_object_end(w)
 }
 
 // Unmarshals JSON into Anthropic_Usage
 // Source: anthropic (src/providers/anthropic/types.odin)
-unmarshal_anthropic_usage :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: Anthropic_Usage,
-	err: oj.Error,
-) {
+unmarshal_anthropic_usage :: proc(r: ^oj.Reader, path: string = "") -> (result: Anthropic_Usage, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_anthropic_usage_elem(r, elem)
 }
 
 // Unmarshals JSON element into Anthropic_Usage
-unmarshal_anthropic_usage_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: Anthropic_Usage,
-	err: oj.Error,
-) {
+unmarshal_anthropic_usage_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: Anthropic_Usage, err: oj.Error) {
 	result.input_tokens, err = oj.read_int_elem(r, elem, "input_tokens")
 	if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
 
 	result.output_tokens, err = oj.read_int_elem(r, elem, "output_tokens")
 	if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
 
-	result.cache_creation_input_tokens, err = oj.read_int_elem(
-		r,
-		elem,
-		"cache_creation_input_tokens",
-	)
+	result.cache_creation_input_tokens, err = oj.read_int_elem(r, elem, "cache_creation_input_tokens")
 	if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
 
 	result.cache_read_input_tokens, err = oj.read_int_elem(r, elem, "cache_read_input_tokens")
@@ -672,12 +522,7 @@ unmarshal_anthropic_usage_elem :: proc(
 }
 
 is_zero_anthropic_usage :: proc(v: Anthropic_Usage) -> bool {
-	return(
-		v.input_tokens == 0 &&
-		v.output_tokens == 0 &&
-		v.cache_creation_input_tokens == 0 &&
-		v.cache_read_input_tokens == 0 \
-	)
+	return v.input_tokens == 0 && v.output_tokens == 0 && v.cache_creation_input_tokens == 0 && v.cache_read_input_tokens == 0
 }
 
 // Marshals Anthropic_Usage to JSON
@@ -696,26 +541,14 @@ marshal_anthropic_usage :: proc(w: ^oj.Writer, value: Anthropic_Usage) {
 
 // Unmarshals JSON into Anthropic_Response
 // Source: anthropic (src/providers/anthropic/types.odin)
-unmarshal_anthropic_response :: proc(
-	r: ^oj.Reader,
-	path: string = "",
-) -> (
-	result: Anthropic_Response,
-	err: oj.Error,
-) {
+unmarshal_anthropic_response :: proc(r: ^oj.Reader, path: string = "") -> (result: Anthropic_Response, err: oj.Error) {
 	elem, elem_err := oj.element_at(r, path)
 	if elem_err != .OK do return result, elem_err
 	return unmarshal_anthropic_response_elem(r, elem)
 }
 
 // Unmarshals JSON element into Anthropic_Response
-unmarshal_anthropic_response_elem :: proc(
-	r: ^oj.Reader,
-	elem: oj.Element,
-) -> (
-	result: Anthropic_Response,
-	err: oj.Error,
-) {
+unmarshal_anthropic_response_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: Anthropic_Response, err: oj.Error) {
 	result.stop_reason, err = oj.read_string_elem(r, elem, "stop_reason")
 	if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
 
