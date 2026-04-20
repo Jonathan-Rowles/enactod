@@ -1,0 +1,4 @@
+bin/
+log/
+otlp/demo-1.json
+docs/traces/demo-1.md

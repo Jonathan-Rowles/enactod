@@ -1,0 +1,6 @@
+[submodule "pkgs/actod"]
+	path = pkgs/actod
+	url = https://github.com/jonathan-rowles/actod.git
+[submodule "pkgs/ojson"]
+	path = pkgs/ojson
+	url = https://github.com/jonathan-rowles/ojson.git
