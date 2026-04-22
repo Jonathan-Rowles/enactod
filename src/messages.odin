@@ -147,6 +147,8 @@ Session_Destroy :: struct {
 	agent_name: string,
 }
 
+Reset_Recv_Arena :: struct {}
+
 Rate_Limiter_Query :: struct {
 	request_id: Request_ID,
 	caller:     actod.PID,
@@ -269,6 +271,7 @@ init_enactod_messages :: proc "contextless" () {
 	actod.register_message_type(Session_Create)
 	actod.register_message_type(Session_Created)
 	actod.register_message_type(Session_Destroy)
+	actod.register_message_type(Reset_Recv_Arena)
 	actod.register_message_type(Rate_Limiter_Query)
 	actod.register_message_type(Rate_Limiter_Status)
 	actod.register_message_type(Rate_Limit_Event)

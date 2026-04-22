@@ -431,6 +431,14 @@ make_session :: proc(agent_name: string, node_name: string = "") -> Session {
 	return impl.make_session(agent_name, node_name)
 }
 
+// Release resources owned by a Session. For remote sessions this frees the
+// local receive arena and unregisters it from the ingress. Safe to call on a
+// zero-valued or local-only Session (no-op). Call from the owner actor's
+// terminate path (or wherever the session's lifetime ends).
+session_destroy :: proc(s: ^Session) {
+	impl.session_destroy(s)
+}
+
 // Fire and forget send. The reply arrives as Agent_Response in the calling
 // actor's mailbox. Caller PID is captured via `get_self_pid()`.
 // Resets the target agent's transport arena before writing the new content.

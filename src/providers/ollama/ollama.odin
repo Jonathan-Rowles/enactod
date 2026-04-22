@@ -4,6 +4,7 @@ import "../../../pkgs/ojson"
 import c "../../core"
 import "core:fmt"
 import "core:mem"
+import vmem "core:mem/virtual"
 import "core:strings"
 
 DEFAULT_NUM_CTX :: 32768
@@ -91,13 +92,17 @@ to_tool :: proc(tool: c.Tool_Def) -> Ollama_Tool_Def {
 	}
 }
 
-parse_response :: proc(reader: ^ojson.Reader, body: string) -> c.Parsed_Response {
+parse_response :: proc(
+	reader: ^ojson.Reader,
+	body: string,
+	arena: ^vmem.Arena = nil,
+) -> c.Parsed_Response {
 	perr := ojson.parse(reader, transmute([]byte)body)
 	if perr != .OK {
-		return c.Parsed_Response{error_msg = c.text("failed to parse response JSON")}
+		return c.Parsed_Response{error_msg = c.text("failed to parse response JSON", arena)}
 	}
 	if err_msg := c.extract_error_msg(reader); len(err_msg) > 0 {
-		return c.Parsed_Response{error_msg = c.text(err_msg)}
+		return c.Parsed_Response{error_msg = c.text(err_msg, arena)}
 	}
 
 	result: c.Parsed_Response
@@ -106,10 +111,10 @@ parse_response :: proc(reader: ^ojson.Reader, body: string) -> c.Parsed_Response
 	result.usage.output_tokens, _ = ojson.read_int(reader, "eval_count")
 
 	resp, _ := unmarshal_ollama_response(reader)
-	result.finish_reason = c.text(resp.done_reason)
-	result.content = c.text(resp.message.content)
+	result.finish_reason = c.text(resp.done_reason, arena)
+	result.content = c.text(resp.message.content, arena)
 	if len(resp.message.thinking) > 0 {
-		result.thinking = c.text(resp.message.thinking)
+		result.thinking = c.text(resp.message.thinking, arena)
 	}
 
 	if len(resp.message.tool_calls) > 0 {
@@ -120,9 +125,9 @@ parse_response :: proc(reader: ^ojson.Reader, body: string) -> c.Parsed_Response
 				args = "{}"
 			}
 			calls[i] = c.Parsed_Tool_Call {
-				id        = c.text(tc.id),
-				name      = c.text(tc.function.name),
-				arguments = c.text(args),
+				id        = c.text(tc.id, arena),
+				name      = c.text(tc.function.name, arena),
+				arguments = c.text(args, arena),
 			}
 		}
 		result.tool_calls = calls
@@ -142,6 +147,7 @@ process_ndjson :: proc(
 	line: string,
 	request_id: c.Request_ID,
 	chunks: ^[dynamic]c.LLM_Stream_Chunk,
+	arena: ^vmem.Arena = nil,
 ) {
 	err := ojson.parse(reader, transmute([]byte)line)
 	if err != .OK {
@@ -162,8 +168,8 @@ process_ndjson :: proc(
 				c.LLM_Stream_Chunk {
 					request_id = request_id,
 					kind = .TOOL_START,
-					name = c.text(tool_name),
-					content = c.text(tool_id),
+					name = c.text(tool_name, arena),
+					content = c.text(tool_id, arena),
 				},
 			)
 			append(
@@ -171,7 +177,7 @@ process_ndjson :: proc(
 				c.LLM_Stream_Chunk {
 					request_id = request_id,
 					kind = .TOOL_INPUT_DELTA,
-					content = c.text(raw_args),
+					content = c.text(raw_args, arena),
 				},
 			)
 		}
@@ -185,7 +191,7 @@ process_ndjson :: proc(
 				c.LLM_Stream_Chunk {
 					request_id = request_id,
 					kind = .THINKING_DELTA,
-					content = c.text(thinking),
+					content = c.text(thinking, arena),
 				},
 			)
 		}
@@ -199,7 +205,7 @@ process_ndjson :: proc(
 				c.LLM_Stream_Chunk {
 					request_id = request_id,
 					kind = .TEXT_DELTA,
-					content = c.text(content),
+					content = c.text(content, arena),
 				},
 			)
 		}
@@ -217,8 +223,8 @@ process_ndjson :: proc(
 			c.LLM_Stream_Chunk {
 				request_id = request_id,
 				kind = .DONE,
-				name = c.text(usage_str),
-				content = c.text("stop"),
+				name = c.text(usage_str, arena),
+				content = c.text("stop", arena),
 			},
 		)
 	}

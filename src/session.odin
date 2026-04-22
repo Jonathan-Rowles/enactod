@@ -30,6 +30,25 @@ make_session :: proc(agent_name: string, node_name: string = "") -> Session {
 	return s
 }
 
+session_destroy :: proc(s: ^Session) {
+	if len(s.node_name) == 0 do return
+	session_signal_proxy_reset(s)
+}
+
+@(private = "file")
+session_signal_proxy_reset :: proc(s: ^Session) {
+	self_name := actod.get_self_name()
+	if len(self_name) == 0 do return
+	proxy_name := fmt.tprintf(
+		"enact_proxy:%s:%s@%s",
+		self_name,
+		agent_actor_name(s.agent_name),
+		s.node_name,
+	)
+	if _, ok := actod.get_actor_pid(proxy_name); !ok do return
+	send_to(proxy_name, "", Reset_Recv_Arena{})
+}
+
 agent_pid :: proc(s: Session) -> actod.PID {
 	return s.pid
 }
@@ -51,13 +70,21 @@ session_request :: proc(s: ^Session, content: string) -> Agent_Request {
 	s.next_id += 1
 	return Agent_Request {
 		request_id = id,
-		caller = actod.get_self_pid(),
-		content = text(content, s.agent_arena),
+		caller     = actod.get_self_pid(),
+		content    = session_outbound_text(s, content),
 	}
+}
+
+@(private)
+session_outbound_text :: proc(s: ^Session, content: string) -> Text {
+	if s.agent_arena != nil do return text(content, s.agent_arena)
+	if len(content) == 0 do return Text{}
+	return Text{s = content}
 }
 
 session_send :: proc(s: ^Session, content: string) -> actod.Send_Error {
 	reset_agent_arena(s)
+	if len(s.node_name) > 0 do session_signal_proxy_reset(s)
 	req := session_request(s, content)
 	return send_to(agent_actor_name(s.agent_name), s.node_name, req)
 }
@@ -74,6 +101,7 @@ session_send_with_parent :: proc(
 
 session_send_cached :: proc(s: ^Session, blocks: ..string) -> actod.Send_Error {
 	reset_agent_arena(s)
+	if len(s.node_name) > 0 do session_signal_proxy_reset(s)
 	if s.agent_arena == nil do s.agent_arena = get_agent_arena_ptr(s.agent_name)
 	id := s.next_id
 	s.next_id += 1
@@ -89,10 +117,10 @@ session_send_cached :: proc(s: ^Session, blocks: ..string) -> actod.Send_Error {
 			MAX_CACHE_BLOCKS,
 		)
 	}
-	if n > 0 {req.cache_block_1 = text(blocks[0], s.agent_arena)}
-	if n > 1 {req.cache_block_2 = text(blocks[1], s.agent_arena)}
-	if n > 2 {req.cache_block_3 = text(blocks[2], s.agent_arena)}
-	if n > 3 {req.cache_block_4 = text(blocks[3], s.agent_arena)}
+	if n > 0 {req.cache_block_1 = session_outbound_text(s, blocks[0])}
+	if n > 1 {req.cache_block_2 = session_outbound_text(s, blocks[1])}
+	if n > 2 {req.cache_block_3 = session_outbound_text(s, blocks[2])}
+	if n > 3 {req.cache_block_4 = session_outbound_text(s, blocks[3])}
 	return send_to(agent_actor_name(s.agent_name), s.node_name, req)
 }
 
@@ -195,6 +223,7 @@ session_request_sync :: proc(
 	}
 
 	reset_agent_arena(s)
+	if len(s.node_name) > 0 do session_signal_proxy_reset(s)
 
 	result: Sync_Result
 	sema: sync.Sema
@@ -218,7 +247,7 @@ session_request_sync :: proc(
 	req := Agent_Request {
 		request_id = id,
 		caller     = reply_pid,
-		content    = text(content, s.agent_arena),
+		content    = session_outbound_text(s, content),
 	}
 	if err := send_to(agent_actor_name(s.agent_name), s.node_name, req); err != .OK {
 		result.is_error = true

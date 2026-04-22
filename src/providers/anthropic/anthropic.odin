@@ -3,6 +3,7 @@ package anthropic
 import "../../../pkgs/ojson"
 import c "../../core"
 import "core:fmt"
+import vmem "core:mem/virtual"
 import "core:strings"
 
 build_url :: proc(base_url: string) -> string {
@@ -198,19 +199,23 @@ to_request :: proc(
 	return req
 }
 
-parse_response :: proc(reader: ^ojson.Reader, body: string) -> c.Parsed_Response {
+parse_response :: proc(
+	reader: ^ojson.Reader,
+	body: string,
+	arena: ^vmem.Arena = nil,
+) -> c.Parsed_Response {
 	perr := ojson.parse(reader, transmute([]byte)body)
 	if perr != .OK {
-		return c.Parsed_Response{error_msg = c.text("failed to parse response JSON")}
+		return c.Parsed_Response{error_msg = c.text("failed to parse response JSON", arena)}
 	}
 	if err_msg := c.extract_error_msg(reader); len(err_msg) > 0 {
-		return c.Parsed_Response{error_msg = c.text(err_msg)}
+		return c.Parsed_Response{error_msg = c.text(err_msg, arena)}
 	}
 
 	resp, _ := unmarshal_anthropic_response(reader)
 
 	result: c.Parsed_Response
-	result.finish_reason = c.text(resp.stop_reason)
+	result.finish_reason = c.text(resp.stop_reason, arena)
 
 	thinking_parts: [dynamic]string
 	thinking_parts.allocator = context.temp_allocator
@@ -228,7 +233,7 @@ parse_response :: proc(reader: ^ojson.Reader, body: string) -> c.Parsed_Response
 				append(&thinking_parts, v.thinking)
 			}
 			if len(v.signature) > 0 {
-				result.thinking_signature = c.text(v.signature)
+				result.thinking_signature = c.text(v.signature, arena)
 			}
 		case Anthropic_Text_Block:
 			if len(v.text) > 0 {
@@ -242,9 +247,9 @@ parse_response :: proc(reader: ^ojson.Reader, body: string) -> c.Parsed_Response
 			append(
 				&tool_calls,
 				c.Parsed_Tool_Call {
-					id = c.text(v.id),
-					name = c.text(v.name),
-					arguments = c.text(args),
+					id = c.text(v.id, arena),
+					name = c.text(v.name, arena),
+					arguments = c.text(args, arena),
 				},
 			)
 		case Anthropic_Tool_Result_Block:
@@ -253,19 +258,19 @@ parse_response :: proc(reader: ^ojson.Reader, body: string) -> c.Parsed_Response
 
 	if len(thinking_parts) > 0 {
 		if len(thinking_parts) == 1 {
-			result.thinking = c.text(thinking_parts[0])
+			result.thinking = c.text(thinking_parts[0], arena)
 		} else {
 			joined := strings.join(thinking_parts[:], "\n", context.temp_allocator)
-			result.thinking = c.text(joined)
+			result.thinking = c.text(joined, arena)
 		}
 	}
 
 	if len(text_parts) > 0 {
 		if len(text_parts) == 1 {
-			result.content = c.text(text_parts[0])
+			result.content = c.text(text_parts[0], arena)
 		} else {
 			joined := strings.join(text_parts[:], "\n", context.temp_allocator)
-			result.content = c.text(joined)
+			result.content = c.text(joined, arena)
 		}
 	}
 
@@ -294,6 +299,7 @@ process_sse :: proc(
 	reader: ^ojson.Reader,
 	event: c.SSE_Event,
 	request_id: c.Request_ID,
+	arena: ^vmem.Arena = nil,
 ) -> (
 	c.LLM_Stream_Chunk,
 	bool,
@@ -330,8 +336,8 @@ process_sse :: proc(
 			return c.LLM_Stream_Chunk {
 					request_id = request_id,
 					kind = .TOOL_START,
-					name = c.text(tool_name),
-					content = c.text(tool_id),
+					name = c.text(tool_name, arena),
+					content = c.text(tool_id, arena),
 				},
 				true
 		}
@@ -351,7 +357,7 @@ process_sse :: proc(
 			return c.LLM_Stream_Chunk {
 					request_id = request_id,
 					kind = .THINKING_DELTA,
-					content = c.text(thinking),
+					content = c.text(thinking, arena),
 				},
 				true
 		case "signature_delta":
@@ -359,8 +365,8 @@ process_sse :: proc(
 			return c.LLM_Stream_Chunk {
 					request_id = request_id,
 					kind = .THINKING_DELTA,
-					name = c.text("signature"),
-					content = c.text(sig),
+					name = c.text("signature", arena),
+					content = c.text(sig, arena),
 				},
 				true
 		case "text_delta":
@@ -368,7 +374,7 @@ process_sse :: proc(
 			return c.LLM_Stream_Chunk {
 					request_id = request_id,
 					kind = .TEXT_DELTA,
-					content = c.text(text_val),
+					content = c.text(text_val, arena),
 				},
 				true
 		case "input_json_delta":
@@ -376,7 +382,7 @@ process_sse :: proc(
 			return c.LLM_Stream_Chunk {
 					request_id = request_id,
 					kind = .TOOL_INPUT_DELTA,
-					content = c.text(partial),
+					content = c.text(partial, arena),
 				},
 				true
 		}
@@ -403,8 +409,8 @@ process_sse :: proc(
 		return c.LLM_Stream_Chunk {
 				request_id = request_id,
 				kind = .DONE,
-				name = c.text(usage_str),
-				content = c.text(stop_reason),
+				name = c.text(usage_str, arena),
+				content = c.text(stop_reason, arena),
 			},
 			true
 	}
@@ -413,7 +419,7 @@ process_sse :: proc(
 		return c.LLM_Stream_Chunk {
 				request_id = request_id,
 				kind = .ERROR,
-				content = c.text(event.data),
+				content = c.text(event.data, arena),
 			},
 			true
 	}

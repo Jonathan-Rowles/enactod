@@ -68,22 +68,39 @@ worker_on_chunk :: proc(chunk: []byte, userdata: rawptr) {
 	switch &d in data.decoder {
 	case anthropic.Stream:
 		for event in sse_feed(&data.sse_parser, chunk) {
-			if msg, ok := anthropic.process_sse(&d, &data.reader, event, data.current_request_id);
-			   ok {
+			if msg, ok := anthropic.process_sse(
+				&d,
+				&data.reader,
+				event,
+				data.current_request_id,
+				data.arena,
+			); ok {
 				send_stream_chunk(data.current_caller, data.arena, msg)
 			}
 		}
 	case openai.Stream:
 		for event in sse_feed(&data.sse_parser, chunk) {
-			if msg, ok := openai.process_sse(&d, &data.reader, event, data.current_request_id);
-			   ok {
+			if msg, ok := openai.process_sse(
+				&d,
+				&data.reader,
+				event,
+				data.current_request_id,
+				data.arena,
+			); ok {
 				send_stream_chunk(data.current_caller, data.arena, msg)
 			}
 		}
 	case ollama.Stream:
 		for line in ndjson_feed(&data.ndjson_parser, chunk) {
 			clear(&data.ol_chunks)
-			ollama.process_ndjson(&d, &data.reader, line, data.current_request_id, &data.ol_chunks)
+			ollama.process_ndjson(
+				&d,
+				&data.reader,
+				line,
+				data.current_request_id,
+				&data.ol_chunks,
+				data.arena,
+			)
 			for msg in data.ol_chunks {
 				send_stream_chunk(data.current_caller, data.arena, msg)
 			}
@@ -91,7 +108,14 @@ worker_on_chunk :: proc(chunk: []byte, userdata: rawptr) {
 	case gemini.Stream:
 		for event in sse_feed(&data.sse_parser, chunk) {
 			clear(&data.ol_chunks)
-			gemini.process_sse(&d, &data.reader, event, data.current_request_id, &data.ol_chunks)
+			gemini.process_sse(
+				&d,
+				&data.reader,
+				event,
+				data.current_request_id,
+				&data.ol_chunks,
+				data.arena,
+			)
 			for msg in data.ol_chunks {
 				send_stream_chunk(data.current_caller, data.arena, msg)
 			}

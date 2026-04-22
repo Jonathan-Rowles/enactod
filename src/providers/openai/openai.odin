@@ -4,6 +4,7 @@ import "../../../pkgs/ojson"
 import c "../../core"
 import "core:fmt"
 import "core:mem"
+import vmem "core:mem/virtual"
 import "core:strings"
 
 build_url :: proc(base_url: string) -> string {
@@ -82,13 +83,17 @@ to_tool :: proc(tool: c.Tool_Def) -> OpenAI_Tool_Def {
 	}
 }
 
-parse_response :: proc(reader: ^ojson.Reader, body: string) -> c.Parsed_Response {
+parse_response :: proc(
+	reader: ^ojson.Reader,
+	body: string,
+	arena: ^vmem.Arena = nil,
+) -> c.Parsed_Response {
 	perr := ojson.parse(reader, transmute([]byte)body)
 	if perr != .OK {
-		return c.Parsed_Response{error_msg = c.text("failed to parse response JSON")}
+		return c.Parsed_Response{error_msg = c.text("failed to parse response JSON", arena)}
 	}
 	if err_msg := c.extract_error_msg(reader); len(err_msg) > 0 {
-		return c.Parsed_Response{error_msg = c.text(err_msg)}
+		return c.Parsed_Response{error_msg = c.text(err_msg, arena)}
 	}
 
 	result: c.Parsed_Response
@@ -102,15 +107,15 @@ parse_response :: proc(reader: ^ojson.Reader, body: string) -> c.Parsed_Response
 
 	if len(resp.choices) > 0 {
 		choice := resp.choices[0]
-		result.finish_reason = c.text(choice.finish_reason)
-		result.content = c.text(choice.message.content)
+		result.finish_reason = c.text(choice.finish_reason, arena)
+		result.content = c.text(choice.message.content, arena)
 		if len(choice.message.tool_calls) > 0 {
 			calls := make([]c.Parsed_Tool_Call, len(choice.message.tool_calls))
 			for tc, i in choice.message.tool_calls {
 				calls[i] = c.Parsed_Tool_Call {
-					id        = c.text(tc.id),
-					name      = c.text(tc.function.name),
-					arguments = c.text(tc.function.arguments),
+					id        = c.text(tc.id, arena),
+					name      = c.text(tc.function.name, arena),
+					arguments = c.text(tc.function.arguments, arena),
 				}
 			}
 			result.tool_calls = calls
@@ -127,6 +132,7 @@ process_sse :: proc(
 	reader: ^ojson.Reader,
 	event: c.SSE_Event,
 	request_id: c.Request_ID,
+	arena: ^vmem.Arena = nil,
 ) -> (
 	c.LLM_Stream_Chunk,
 	bool,
@@ -137,7 +143,11 @@ process_sse :: proc(
 	}
 
 	if strings.trim_space(data) == "[DONE]" {
-		return c.LLM_Stream_Chunk{request_id = request_id, kind = .DONE, content = c.text("stop")},
+		return c.LLM_Stream_Chunk {
+				request_id = request_id,
+				kind = .DONE,
+				content = c.text("stop", arena),
+			},
 			true
 	}
 
@@ -152,8 +162,8 @@ process_sse :: proc(
 		return c.LLM_Stream_Chunk {
 				request_id = request_id,
 				kind = .TOOL_START,
-				name = c.text(fn_name),
-				content = c.text(tool_id),
+				name = c.text(fn_name, arena),
+				content = c.text(tool_id, arena),
 			},
 			true
 	}
@@ -166,7 +176,7 @@ process_sse :: proc(
 		return c.LLM_Stream_Chunk {
 				request_id = request_id,
 				kind = .TOOL_INPUT_DELTA,
-				content = c.text(fn_args),
+				content = c.text(fn_args, arena),
 			},
 			true
 	}
@@ -177,7 +187,7 @@ process_sse :: proc(
 			return c.LLM_Stream_Chunk {
 					request_id = request_id,
 					kind = .DONE,
-					content = c.text(reason),
+					content = c.text(reason, arena),
 				},
 				true
 		}
@@ -189,7 +199,7 @@ process_sse :: proc(
 			return c.LLM_Stream_Chunk {
 					request_id = request_id,
 					kind = .TEXT_DELTA,
-					content = c.text(delta_content),
+					content = c.text(delta_content, arena),
 				},
 				true
 		}

@@ -110,6 +110,7 @@ cli_terminate :: proc(data: ^CLI_State) {
 	if len(data.agent_name) > 0 {
 		enact.send_to("gateway", SERVER_NODE, enact.Session_Destroy{agent_name = data.agent_name})
 	}
+	enact.session_destroy(&data.session)
 }
 
 Stdin_Reader_State :: struct {

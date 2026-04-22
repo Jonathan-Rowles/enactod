@@ -3,6 +3,7 @@ package gemini
 import "../../../pkgs/ojson"
 import c "../../core"
 import "core:fmt"
+import vmem "core:mem/virtual"
 import "core:strings"
 
 build_url :: proc(base_url: string, model: string, stream: bool) -> string {
@@ -161,20 +162,24 @@ to_request :: proc(
 	return req
 }
 
-parse_response :: proc(reader: ^ojson.Reader, body: string) -> c.Parsed_Response {
+parse_response :: proc(
+	reader: ^ojson.Reader,
+	body: string,
+	arena: ^vmem.Arena = nil,
+) -> c.Parsed_Response {
 	perr := ojson.parse(reader, transmute([]byte)body)
 	if perr != .OK {
-		return c.Parsed_Response{error_msg = c.text("failed to parse response JSON")}
+		return c.Parsed_Response{error_msg = c.text("failed to parse response JSON", arena)}
 	}
 	if err_msg := c.extract_error_msg(reader); len(err_msg) > 0 {
-		return c.Parsed_Response{error_msg = c.text(err_msg)}
+		return c.Parsed_Response{error_msg = c.text(err_msg, arena)}
 	}
 
 	resp, _ := unmarshal_gemini_response(reader)
 
 	result: c.Parsed_Response
 	if len(resp.candidates) == 0 {
-		return c.Parsed_Response{error_msg = c.text("missing candidates in response")}
+		return c.Parsed_Response{error_msg = c.text("missing candidates in response", arena)}
 	}
 	candidate := resp.candidates[0]
 
@@ -187,11 +192,11 @@ parse_response :: proc(reader: ^ojson.Reader, body: string) -> c.Parsed_Response
 
 	switch finish_reason_str {
 	case "STOP":
-		result.finish_reason = c.text("end_turn")
+		result.finish_reason = c.text("end_turn", arena)
 	case "MAX_TOKENS":
-		result.finish_reason = c.text("max_tokens")
+		result.finish_reason = c.text("max_tokens", arena)
 	case:
-		result.finish_reason = c.text(finish_reason_str)
+		result.finish_reason = c.text(finish_reason_str, arena)
 	}
 
 	text_parts: [dynamic]string
@@ -213,33 +218,37 @@ parse_response :: proc(reader: ^ojson.Reader, body: string) -> c.Parsed_Response
 			continue
 		}
 		if len(part.function_call.name) > 0 {
-			name_text := c.text(part.function_call.name)
+			name_text := c.text(part.function_call.name, arena)
 			args := part.function_call.args
 			if len(args) == 0 {
 				args = "{}"
 			}
 			append(
 				&tool_calls,
-				c.Parsed_Tool_Call{id = name_text, name = name_text, arguments = c.text(args)},
+				c.Parsed_Tool_Call {
+					id = name_text,
+					name = name_text,
+					arguments = c.text(args, arena),
+				},
 			)
 		}
 	}
 
 	if len(text_parts) > 0 {
 		if len(text_parts) == 1 {
-			result.content = c.text(text_parts[0])
+			result.content = c.text(text_parts[0], arena)
 		} else {
 			joined := strings.join(text_parts[:], "\n", context.temp_allocator)
-			result.content = c.text(joined)
+			result.content = c.text(joined, arena)
 		}
 	}
 
 	if len(thinking_parts) > 0 {
 		if len(thinking_parts) == 1 {
-			result.thinking = c.text(thinking_parts[0])
+			result.thinking = c.text(thinking_parts[0], arena)
 		} else {
 			joined := strings.join(thinking_parts[:], "\n", context.temp_allocator)
-			result.thinking = c.text(joined)
+			result.thinking = c.text(joined, arena)
 		}
 	}
 
@@ -272,6 +281,7 @@ process_sse :: proc(
 	event: c.SSE_Event,
 	request_id: c.Request_ID,
 	chunks: ^[dynamic]c.LLM_Stream_Chunk,
+	arena: ^vmem.Arena = nil,
 ) {
 	data := event.data
 	if len(data) == 0 {
@@ -287,7 +297,11 @@ process_sse :: proc(
 		api_err, _ := ojson.read_string(reader, "error.message")
 		append(
 			chunks,
-			c.LLM_Stream_Chunk{request_id = request_id, kind = .ERROR, content = c.text(api_err)},
+			c.LLM_Stream_Chunk {
+				request_id = request_id,
+				kind = .ERROR,
+				content = c.text(api_err, arena),
+			},
 		)
 		return
 	}
@@ -306,8 +320,8 @@ process_sse :: proc(
 					c.LLM_Stream_Chunk {
 						request_id = request_id,
 						kind = .TOOL_START,
-						name = c.text(fn_name),
-						content = c.text(fn_name),
+						name = c.text(fn_name, arena),
+						content = c.text(fn_name, arena),
 					},
 				)
 				append(
@@ -315,7 +329,7 @@ process_sse :: proc(
 					c.LLM_Stream_Chunk {
 						request_id = request_id,
 						kind = .TOOL_INPUT_DELTA,
-						content = c.text(raw_args),
+						content = c.text(raw_args, arena),
 					},
 				)
 				continue
@@ -330,7 +344,7 @@ process_sse :: proc(
 						c.LLM_Stream_Chunk {
 							request_id = request_id,
 							kind = .THINKING_DELTA,
-							content = c.text(text_val),
+							content = c.text(text_val, arena),
 						},
 					)
 				} else {
@@ -339,7 +353,7 @@ process_sse :: proc(
 						c.LLM_Stream_Chunk {
 							request_id = request_id,
 							kind = .TEXT_DELTA,
-							content = c.text(text_val),
+							content = c.text(text_val, arena),
 						},
 					)
 				}
@@ -380,8 +394,8 @@ process_sse :: proc(
 			c.LLM_Stream_Chunk {
 				request_id = request_id,
 				kind = .DONE,
-				name = c.text(usage_str),
-				content = c.text(stop),
+				name = c.text(usage_str, arena),
+				content = c.text(stop, arena),
 			},
 		)
 	}

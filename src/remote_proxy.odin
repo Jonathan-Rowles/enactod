@@ -2,20 +2,40 @@ package enactod_impl
 
 import "../pkgs/actod"
 import "core:log"
+import vmem "core:mem/virtual"
+
+PROXY_RECV_ARENA_RESERVED :: 64 * 1024 * 1024
 
 Proxy_State :: struct {
 	remote_actor: string,
 	remote_node:  string,
+	recv_arena:   vmem.Arena,
 }
 
 proxy_behaviour :: actod.Actor_Behaviour(Proxy_State) {
+	init           = proxy_init,
 	handle_message = proxy_handle_message,
+	terminate      = proxy_terminate,
+}
+
+proxy_init :: proc(data: ^Proxy_State) {
+	arena_init(&data.recv_arena, PROXY_RECV_ARENA_RESERVED)
+}
+
+proxy_terminate :: proc(data: ^Proxy_State) {
+	arena_destroy(&data.recv_arena)
 }
 
 proxy_handle_message :: proc(data: ^Proxy_State, from: actod.PID, content: any) {
-	switch msg in content {
+	switch &msg in content {
 	case Proxy_Forward:
+		if _, is_req := msg.payload.(Agent_Request); is_req {
+			arena_reset(&data.recv_arena)
+		}
+		intern_text_fields(&msg.payload, &data.recv_arena)
 		proxy_forward_to_target(msg)
+	case Reset_Recv_Arena:
+		arena_reset(&data.recv_arena)
 	case Agent_Request:
 		proxy_reply(data, from, msg)
 	case Agent_Response:

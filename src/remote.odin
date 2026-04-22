@@ -4,6 +4,7 @@ import "../pkgs/actod"
 import "base:intrinsics"
 import "base:runtime"
 import "core:log"
+import vmem "core:mem/virtual"
 import curl "vendor:curl"
 
 INGRESS_ACTOR_NAME :: "enact_ingress"
@@ -40,12 +41,24 @@ Proxy_Forward :: struct {
 	payload: Remote_Payload,
 }
 
+Text_Op :: #type proc(t: ^Text, user_data: rawptr)
+
 resolve_text_fields :: proc(msg: ^$T) {
-	walk_text_fields(rawptr(msg), type_info_of(T))
+	walk_text_fields(rawptr(msg), type_info_of(T), flatten_text_op, nil)
+}
+
+intern_text_fields :: proc(msg: ^$T, arena: ^vmem.Arena) {
+	if !arena_is_initialized(arena) do return
+	walk_text_fields(rawptr(msg), type_info_of(T), intern_text_op, rawptr(arena))
 }
 
 @(private = "file")
-walk_text_fields :: proc(data: rawptr, ti: ^runtime.Type_Info) {
+walk_text_fields :: proc(
+	data: rawptr,
+	ti: ^runtime.Type_Info,
+	op: Text_Op,
+	user_data: rawptr,
+) {
 	base := runtime.type_info_base(ti)
 	text_tid := typeid_of(Text)
 
@@ -55,10 +68,10 @@ walk_text_fields :: proc(data: rawptr, ti: ^runtime.Type_Info) {
 			field_ti := v.types[i]
 			field_ptr := rawptr(uintptr(data) + v.offsets[i])
 			if field_ti.id == text_tid {
-				process_text_field((^Text)(field_ptr))
+				op((^Text)(field_ptr), user_data)
 				continue
 			}
-			walk_text_fields(field_ptr, field_ti)
+			walk_text_fields(field_ptr, field_ti, op, user_data)
 		}
 	case runtime.Type_Info_Union:
 		tag_offset := uintptr(v.tag_offset)
@@ -69,9 +82,9 @@ walk_text_fields :: proc(data: rawptr, ti: ^runtime.Type_Info) {
 		}
 		variant_ti := v.variants[tag - 1]
 		if variant_ti.id == text_tid {
-			process_text_field((^Text)(data))
+			op((^Text)(data), user_data)
 		} else {
-			walk_text_fields(data, variant_ti)
+			walk_text_fields(data, variant_ti, op, user_data)
 		}
 	}
 }
@@ -92,12 +105,18 @@ union_tag_value :: proc(ptr: rawptr, tag_ti: ^runtime.Type_Info) -> i64 {
 }
 
 @(private = "file")
-process_text_field :: proc(t: ^Text) {
+flatten_text_op :: proc(t: ^Text, _: rawptr) {
 	if t.handle.len > 0 {
-		t^ = Text {
-			s = resolve(t^),
-		}
+		t^ = Text{s = resolve(t^)}
 	}
+}
+
+@(private = "file")
+intern_text_op :: proc(t: ^Text, user_data: rawptr) {
+	arena := (^vmem.Arena)(user_data)
+	if t.handle.len > 0 && t.arena == uintptr(arena) do return
+	if t.handle.len == 0 && len(t.s) == 0 do return
+	t^ = text(resolve(t^), arena)
 }
 
 send :: proc(to: actod.PID, msg: $T) -> actod.Send_Error {

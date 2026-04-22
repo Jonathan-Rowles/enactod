@@ -406,7 +406,7 @@ handle_agent_request :: proc(data: ^Agent_State, from: actod.PID, msg: Agent_Req
 		result := Agent_Response {
 			request_id = msg.request_id,
 			is_error   = true,
-			error_msg  = text("agent claimed by another actor"),
+			error_msg  = text("agent claimed by another actor", agent_arena(data)),
 		}
 		send(from, result)
 		return
@@ -422,7 +422,7 @@ handle_agent_request :: proc(data: ^Agent_State, from: actod.PID, msg: Agent_Req
 		result := Agent_Response {
 			request_id = msg.request_id,
 			is_error   = true,
-			error_msg  = text("agent is busy"),
+			error_msg  = text("agent is busy", agent_arena(data)),
 		}
 		send(from, result)
 		return
@@ -473,7 +473,12 @@ handle_llm_result :: proc(data: ^Agent_State, msg: LLM_Result) {
 			compact_fail(data, fmt.tprintf("HTTP %d: %s", msg.status_code, resolve(msg.body)))
 			return
 		}
-		parsed := parse_llm_response(&data.reader, resolve(msg.body), data.current_format)
+		parsed := parse_llm_response(
+			&data.reader,
+			resolve(msg.body),
+			data.current_format,
+			agent_arena(data),
+		)
 		parsed_err := resolve(parsed.error_msg)
 		if len(parsed_err) > 0 {
 			compact_fail(data, parsed_err)
@@ -518,7 +523,12 @@ handle_llm_result :: proc(data: ^Agent_State, msg: LLM_Result) {
 		return
 	}
 
-	parsed := parse_llm_response(&data.reader, resolve(msg.body), data.current_format)
+	parsed := parse_llm_response(
+		&data.reader,
+		resolve(msg.body),
+		data.current_format,
+		agent_arena(data),
+	)
 
 	parsed_err_s := resolve(parsed.error_msg)
 	if len(parsed_err_s) > 0 {
@@ -574,7 +584,7 @@ append_tool_error :: proc(data: ^Agent_State, call_id: Text, tool_name: Text, ms
 			request_id = data.current_req,
 			call_id = call_id,
 			tool_name = tool_name,
-			result = text(msg),
+			result = text(msg, agent_arena(data)),
 			is_error = true,
 		},
 	)
@@ -792,7 +802,7 @@ process_parsed_response :: proc(data: ^Agent_State, parsed: Parsed_Response) {
 					continue
 				}
 				output, is_error := tool.impl(tc_args_s, context.temp_allocator)
-				output_text := text(output)
+				output_text := text(output, agent_arena(data))
 				append(
 					&data.tool_results,
 					Tool_Result_Msg {
@@ -811,7 +821,10 @@ process_parsed_response :: proc(data: ^Agent_State, parsed: Parsed_Response) {
 				eph_name := fmt.tprintf("ephemeral:%s:%s", data.agent_name, tc_id_s)
 				if !spawn_tool_actor(eph_name, tool, agent_arena(data), ephemeral = true) {
 					log.errorf("Failed to spawn ephemeral tool for '%s'", tc_name_s)
-					err_text := text(fmt.tprintf("failed to spawn ephemeral tool '%s'", tc_name_s))
+					err_text := text(
+						fmt.tprintf("failed to spawn ephemeral tool '%s'", tc_name_s),
+						agent_arena(data),
+					)
 					emit_tool_done_trace(data, tc.id, tc.name, err_text, true)
 					append_tool_error(
 						data,
@@ -833,7 +846,10 @@ process_parsed_response :: proc(data: ^Agent_State, parsed: Parsed_Response) {
 						ephemeral = false,
 					) {
 						log.errorf("Failed to spawn tool '%s'", tc_name_s)
-						err_text := text(fmt.tprintf("failed to spawn tool '%s'", tc_name_s))
+						err_text := text(
+							fmt.tprintf("failed to spawn tool '%s'", tc_name_s),
+							agent_arena(data),
+						)
 						emit_tool_done_trace(data, tc.id, tc.name, err_text, true)
 						append_tool_error(
 							data,
@@ -847,7 +863,10 @@ process_parsed_response :: proc(data: ^Agent_State, parsed: Parsed_Response) {
 				if send_err := actod.send_message_name(tool_actor_name, tool_msg);
 				   send_err != .OK {
 					log.errorf("Failed to send to tool '%s': %v", tc_name_s, send_err)
-					err_text := text(fmt.tprintf("tool '%s' unavailable", tc_name_s))
+					err_text := text(
+						fmt.tprintf("tool '%s' unavailable", tc_name_s),
+						agent_arena(data),
+					)
 					emit_tool_done_trace(data, tc.id, tc.name, err_text, true)
 					append_tool_error(
 						data,
@@ -910,7 +929,7 @@ finalize_tool_results :: proc(data: ^Agent_State) {
 		resolved := resolve(tr.result)
 		content: Text
 		if tr.is_error {
-			content = text(fmt.tprintf("Error: %s", resolved))
+			content = text(fmt.tprintf("Error: %s", resolved), agent_arena(data))
 		} else {
 			content = tr.result
 		}
@@ -1206,11 +1225,12 @@ finalize_stream :: proc(data: ^Agent_State, stop_reason: string, usage_str: stri
 	stream_input, stream_output, stream_cache_create, stream_cache_read := parse_stream_usage(
 		usage_str,
 	)
+	arena := agent_arena(data)
 	parsed := Parsed_Response {
-		content = text(text_s),
-		finish_reason = text(stop_reason),
-		thinking = text(thinking_s),
-		thinking_signature = text(signature_s),
+		content = text(text_s, arena),
+		finish_reason = text(stop_reason, arena),
+		thinking = text(thinking_s, arena),
+		thinking_signature = text(signature_s, arena),
 		usage = Usage_Info {
 			input_tokens = stream_input,
 			output_tokens = stream_output,
@@ -1364,6 +1384,7 @@ emit_request_end :: proc(data: ^Agent_State, detail: Text, is_error: bool) {
 }
 
 reset_agent :: proc(data: ^Agent_State) {
+	caller := data.caller_pid
 	data.phase = .IDLE
 	data.current_req = 0
 	data.parent_request_id = 0
@@ -1381,4 +1402,11 @@ reset_agent :: proc(data: ^Agent_State) {
 		delete(k)
 	}
 	clear(&data.tool_starts)
+
+	if data.inherited_arena == nil && caller != 0 {
+		caller_node := actod.get_node_id(caller)
+		if caller_node != 0 && !actod.is_local_pid(caller) {
+			arena_reset(&data.arena)
+		}
+	}
 }
