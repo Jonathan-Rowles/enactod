@@ -27,6 +27,8 @@ Remote_Payload :: union {
 	Trace_Event,
 	Compact_Result,
 	History_Entry_Msg,
+	Load_History,
+	Load_History_Result,
 }
 
 Remote_Envelope :: struct {

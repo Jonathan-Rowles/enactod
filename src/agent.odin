@@ -8,6 +8,7 @@ import "core:log"
 import vmem "core:mem/virtual"
 import "core:strings"
 import "core:time"
+import "wire"
 
 Agent_Phase :: enum {
 	IDLE,
@@ -183,6 +184,8 @@ agent_handle_message :: proc(data: ^Agent_State, from: actod.PID, content: any) 
 		handle_arena_status_query(data, msg)
 	case History_Query:
 		handle_history_query(data, msg)
+	case Load_History:
+		handle_load_history(data, msg)
 	}
 }
 
@@ -224,6 +227,87 @@ handle_history_query :: proc(data: ^Agent_State, msg: History_Query) {
 			content = intern(entry.content, arena),
 			tool_call_id = intern(entry.tool_call_id, arena),
 		},
+	)
+}
+
+handle_load_history :: proc(data: ^Agent_State, msg: Load_History) {
+	if data.phase != .IDLE {
+		send(
+			msg.caller,
+			Load_History_Result {
+				request_id = msg.request_id,
+				is_error   = true,
+				error_msg  = text("agent is busy", agent_arena(data)),
+			},
+		)
+		return
+	}
+
+	json_str := resolve(msg.messages_json)
+	if len(json_str) == 0 {
+		send(msg.caller, Load_History_Result{request_id = msg.request_id})
+		return
+	}
+
+	if perr := ojson.parse(&data.reader, transmute([]byte)json_str); perr != .OK {
+		send(
+			msg.caller,
+			Load_History_Result {
+				request_id = msg.request_id,
+				is_error   = true,
+				error_msg  = text("invalid JSON", agent_arena(data)),
+			},
+		)
+		return
+	}
+
+	payload, perr := wire.unmarshal_history_payload(&data.reader)
+	if perr != .OK && perr != .Key_Not_Found {
+		send(
+			msg.caller,
+			Load_History_Result {
+				request_id = msg.request_id,
+				is_error   = true,
+				error_msg  = text("invalid history payload", agent_arena(data)),
+			},
+		)
+		return
+	}
+
+	for entry, i in payload.messages {
+		if entry.role != "user" && entry.role != "assistant" {
+			send(
+				msg.caller,
+				Load_History_Result {
+					request_id = msg.request_id,
+					is_error   = true,
+					error_msg = text(
+						fmt.tprintf("unknown role %q at messages[%d]", entry.role, i),
+						agent_arena(data),
+					),
+				},
+			)
+			return
+		}
+	}
+
+	if len(data.messages) == 0 && len(data.config.system_prompt) > 0 {
+		append_system_entry(&data.messages, data.config.system_prompt)
+	}
+
+	for entry in payload.messages {
+		switch entry.role {
+		case "user":
+			append_user_entry(&data.messages, entry.content)
+		case "assistant":
+			append_assistant_entry(&data.messages, text(entry.content,
+          agent_arena(data)))
+		}
+	}
+
+	send(
+		msg.caller,
+		Load_History_Result{request_id = msg.request_id, loaded = len(payload.messages)},
 	)
 }
 

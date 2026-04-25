@@ -70,6 +70,10 @@ proxy_handle_message :: proc(data: ^Proxy_State, from: actod.PID, content: any) 
 		proxy_reply(data, from, msg)
 	case History_Entry_Msg:
 		proxy_reply(data, from, msg)
+	case Load_History:
+		proxy_reply(data, from, msg)
+	case Load_History_Result:
+		proxy_reply(data, from, msg)
 	}
 }
 
@@ -109,6 +113,10 @@ proxy_forward_to_target :: proc(f: Proxy_Forward) {
 	case Compact_Result:
 		proxy_send_to_local(f.target, p)
 	case History_Entry_Msg:
+		proxy_send_to_local(f.target, p)
+	case Load_History:
+		proxy_send_to_local(f.target, p)
+	case Load_History_Result:
 		proxy_send_to_local(f.target, p)
 	}
 }

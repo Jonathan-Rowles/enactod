@@ -185,6 +185,21 @@ compact_history :: proc(
 	return send_to(agent_actor_name(agent_name), node_name, msg)
 }
 
+load_history :: proc(
+	agent_name: string,
+	messages_json: string,
+	node_name: string = "",
+	request_id: Request_ID = 0,
+) -> actod.Send_Error {
+	arena := get_agent_arena_ptr(agent_name)
+	msg := Load_History {
+		request_id    = request_id,
+		caller        = actod.get_self_pid(),
+		messages_json = text(messages_json, arena),
+	}
+	return send_to(agent_actor_name(agent_name), node_name, msg)
+}
+
 unload_ollama_models :: proc(node_name: string = "") -> actod.Send_Error {
 	return send_to(OLLAMA_TRACKER_ACTOR_NAME, node_name, Ollama_Unload_All{})
 }

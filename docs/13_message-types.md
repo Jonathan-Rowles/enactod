@@ -29,6 +29,8 @@ init_enactod_messages :: proc "contextless" () {
     enact.register_message_type(Reset_Conversation)
     enact.register_message_type(Compact_History)
     enact.register_message_type(Compact_Result)
+    enact.register_message_type(Load_History)
+    enact.register_message_type(Load_History_Result)
 
     // Arena / history introspection
     enact.register_message_type(Arena_Status_Query)
@@ -67,7 +69,7 @@ init_enactod_messages :: proc "contextless" () {
 | LLM dispatch            | `LLM_Call`, `LLM_Result`, `LLM_Stream_Chunk`                          |
 | Tools                   | `Tool_Call_Msg`, `Tool_Result_Msg`                                    |
 | Routing                 | `Set_Route`, `Clear_Route`                                            |
-| Conversation management | `Reset_Conversation`, `Compact_History`, `Compact_Result`             |
+| Conversation management | `Reset_Conversation`, `Compact_History`, `Compact_Result`, `Load_History`, `Load_History_Result` |
 | Arena introspection     | `Arena_Status_Query`, `Arena_Status`                                  |
 | History introspection   | `History_Query`, `History_Entry_Msg`                                  |
 | Ollama                  | `Ollama_Model_Seen`, `Ollama_Unload_All`                              |
@@ -86,6 +88,7 @@ Remote_Payload :: union {
     Rate_Limiter_Query, Rate_Limiter_Status, Rate_Limit_Event,
     Trace_Event,
     Compact_Result, History_Entry_Msg,
+    Load_History, Load_History_Result,
 }
 ```
 

@@ -7,6 +7,7 @@ all: generate-types examples
 
 generate-types: submodules
 	@$(MAKE) -C pkgs/ojson build-generator
+	@pkgs/ojson/bin/generate -r src/wire -o src/wire/ojson.gen.odin -p wire
 	@$(MAKE) --no-print-directory $(patsubst src/providers/%,generate-types/%,$(wildcard src/providers/*))
 
 generate-types/%:
@@ -37,5 +38,5 @@ submodules:
 
 clean:
 	@rm -rf bin/
-	@rm -f src/providers/*/ojson.gen.odin
+	@rm -f src/providers/*/ojson.gen.odin src/wire/ojson.gen.odin
 	@echo "cleaned"

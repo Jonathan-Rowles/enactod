@@ -10,7 +10,7 @@ Agent_Request :: struct {
 	parent_request_id: Request_ID,
 	caller:            actod.PID,
 	content:           Text,
-  // TODO: find better data sructure for this.
+	// TODO: find better data sructure for this.
 	// Fixed-width slots — actod's wire format forbids dynamic arrays
 	// in messages. Empty Text values are ignored.
 	cache_block_1:     Text,
@@ -143,6 +143,19 @@ History_Entry_Msg :: struct {
 	tool_call_id: Text,
 }
 
+Load_History :: struct {
+	request_id:    Request_ID,
+	caller:        actod.PID,
+	messages_json: Text,
+}
+
+Load_History_Result :: struct {
+	request_id: Request_ID,
+	is_error:   bool,
+	error_msg:  Text,
+	loaded:     int,
+}
+
 Session_Create :: struct {}
 
 Session_Created :: struct {
@@ -273,6 +286,8 @@ init_enactod_messages :: proc "contextless" () {
 	actod.register_message_type(Arena_Status)
 	actod.register_message_type(History_Query)
 	actod.register_message_type(History_Entry_Msg)
+	actod.register_message_type(Load_History)
+	actod.register_message_type(Load_History_Result)
 	actod.register_message_type(Ollama_Model_Seen)
 	actod.register_message_type(Ollama_Unload_All)
 	actod.register_message_type(Session_Create)

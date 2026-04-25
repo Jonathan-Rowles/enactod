@@ -516,6 +516,21 @@ compact_history :: proc(
 	return impl.compact_history(agent_name, instruction, node_name, request_id)
 }
 
+// Seed the agent's chat history with prior turns. `messages_json` is a JSON
+// object of the shape `{"messages":[{"role":"user|assistant","content":"..."}]}`,
+// in chronological order. Entries are appended; if the agent has no
+// messages yet and `Agent_Config.system_prompt` is set, the system prompt
+// is injected at index 0 first. Rejected when the agent is non IDLE.
+// Caller receives a Load_History_Result stamped with `request_id`.
+load_history :: proc(
+	agent_name: string,
+	messages_json: string,
+	node_name: string = "",
+	request_id: Request_ID = 0,
+) -> Send_Error {
+	return impl.load_history(agent_name, messages_json, node_name, request_id)
+}
+
 // -----------------------------------------------------------------------------
 // Tools
 // -----------------------------------------------------------------------------
@@ -628,6 +643,20 @@ History_Query :: impl.History_Query
 
 // Reply to History_Query.
 History_Entry_Msg :: impl.History_Entry_Msg
+
+// Message: seed an agent's chat history with prior turns. `messages_json`
+// is a JSON object `{"messages":[{"role":"user|assistant","content":"..."}]}`
+// in chronological order. Entries are appended; the system prompt is
+// sourced from `Agent_Config.system_prompt`, not the payload. Tool turns
+// and assistant tool calls are intentionally not surfaced in v1, this is
+// a "resume conversation" import, not an exact-fidelity round trip.
+// Rejected when the agent is non-IDLE.
+Load_History :: impl.Load_History
+
+// Reply to Load_History. `loaded` is the number of entries appended on
+// success. On failure, `is_error` is true and `error_msg` describes the
+// failure (busy, invalid JSON, invalid payload, unknown role).
+Load_History_Result :: impl.Load_History_Result
 
 // Message: client asks a gateway actor to open a session. The gateway
 // decides what "session" means (typically spawns a per client agent). Not

@@ -55,13 +55,14 @@ Public `text(s)` always produces string backed `Text`. Framework internal code c
 * **Sub agents** inherit the parent's arena via `spawn_sub_agent`. They never reset.
 * **`agent_terminate`** destroys the arena (top level agents only).
 
-## Reset_Conversation and Compact_History
+## Reset_Conversation, Compact_History, Load_History
 
 Addressed by agent name (no Session required):
 
 ```odin
 enact.reset_conversation(agent_name, node_name := "")
 enact.compact_history(agent_name, instruction := "", node_name := "")
+enact.load_history(agent_name, messages_json, node_name := "")
 ```
 
 `reset_conversation` clears chat history (keeping the agent and tool actors alive). Ignored while non idle; retry when IDLE.
@@ -77,6 +78,30 @@ Compact_Result :: struct {
     error_msg:  Text,
 }
 ```
+
+`load_history` seeds the agent's chat history with prior turns from a JSON payload, the canonical "resume a saved conversation" path. The wire shape mirrors OpenAI's request body:
+
+```json
+{
+  "messages": [
+    {"role": "user",      "content": "Hi"},
+    {"role": "assistant", "content": "Hello, how can I help?"}
+  ]
+}
+```
+
+Entries are appended if the agent has no messages yet and `Agent_Config.system_prompt` is set, the system prompt is injected at index 0 first. Roles other than `user` / `assistant` are rejected (the framework configures `system` from `Agent_Config.system_prompt`, not the payload). Tool turns and assistant tool calls are not surfaced in v1, this is a resume import, not an exact fidelity round trip.
+
+```odin
+Load_History_Result :: struct {
+    request_id: Request_ID,
+    is_error:   bool,
+    error_msg:  Text,
+    loaded:     int,
+}
+```
+
+Validation is all-or-nothing: an unknown role aborts the load before any entries are appended. `loaded` is the count appended on success. Combine with `accumulate_history = true` (the default), `accumulate_history = false` clears history at every request and defeats the seed.
 
 ## accumulate_history
 
