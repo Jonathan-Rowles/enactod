@@ -39,7 +39,6 @@ Agent_State :: struct {
 	writer:                      ojson.Writer,
 	tool_names:                  [dynamic]string,
 	compiled_schemas:            []Compiled_Schema,
-	// Wins over config.llm. Cleared via Clear_Route.
 	route_override:              Maybe(LLM_Config),
 	current_format:              API_Format,
 	stream_thinking:             strings.Builder,
@@ -176,6 +175,8 @@ agent_handle_message :: proc(data: ^Agent_State, from: actod.PID, content: any) 
 		log.infof("agent:%s route override cleared", data.agent_name)
 	case Reset_Conversation:
 		handle_reset_conversation(data, from, msg)
+	case Cancel_Turn:
+		handle_cancel_turn(data, from, msg)
 	case Compact_History:
 		handle_compact_history(data, from, msg)
 	case Arena_Status_Query:
@@ -238,6 +239,45 @@ handle_reset_conversation :: proc(data: ^Agent_State, from: actod.PID, msg: Rese
 	}
 	log.infof("agent:%s resetting conversation (%d turns)", data.agent_name, len(data.messages))
 	free_chat_entries(&data.messages)
+}
+
+handle_cancel_turn :: proc(data: ^Agent_State, from: actod.PID, msg: Cancel_Turn) {
+	if data.phase == .IDLE {
+		return
+	}
+	if data.phase == .AWAITING_COMPACT {
+		return
+	}
+	if msg.request_id != data.current_req {
+		return
+	}
+
+	if data.llm_timer_id != 0 {
+		actod.cancel_timer(data.llm_timer_id)
+		data.llm_timer_id = 0
+	}
+	if data.tool_timer_id != 0 {
+		actod.cancel_timer(data.tool_timer_id)
+		data.tool_timer_id = 0
+	}
+
+	log.infof("agent:%s request %d cancelled by caller", data.agent_name, msg.request_id)
+
+	arena := agent_arena(data)
+	err_text := text("(cancelled)", arena)
+	result := Agent_Response {
+		request_id                  = data.current_req,
+		is_error                    = true,
+		error_msg                   = err_text,
+		input_tokens                = data.total_input_tokens,
+		output_tokens               = data.total_output_tokens,
+		cache_creation_input_tokens = data.total_cache_creation_tokens,
+		cache_read_input_tokens     = data.total_cache_read_tokens,
+	}
+	agent_track_peak(data)
+	send(data.caller_pid, result)
+	emit_request_end(data, err_text, true)
+	reset_agent(data)
 }
 
 COMPACT_DEFAULT_INSTRUCTION ::
@@ -394,9 +434,6 @@ handle_rate_limit_event :: proc(data: ^Agent_State, msg: Rate_Limit_Event) {
 }
 
 handle_agent_request :: proc(data: ^Agent_State, from: actod.PID, msg: Agent_Request) {
-	// Claim: first Agent_Request wins. Permanent for the agent's lifetime.
-	// Second claimant is rejected without touching msg.content (its handle
-	// may point into a dirty or already-reset arena).
 	if data.claimed_by != 0 && data.claimed_by != from {
 		log.warnf(
 			"agent:%s rejected request %d — already claimed by another actor",
@@ -1263,6 +1300,7 @@ emit_event :: proc(data: ^Agent_State, kind: Event_Kind, subject: Text = {}, det
 		Agent_Event {
 			request_id = data.current_req,
 			kind = kind,
+			agent_name = text(data.agent_name, arena),
 			subject = intern(subject, arena),
 			detail = intern(detail, arena),
 		},

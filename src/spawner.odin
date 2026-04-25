@@ -19,7 +19,10 @@ spawn_agent :: proc(name: string, config: Agent_Config) -> (Session, bool) {
 		agent_name,
 		state,
 		behaviour,
-		actod.make_actor_config(children = config.children),
+		actod.make_actor_config(
+			children       = config.children,
+			restart_policy = config.restart_policy,
+		),
 	)
 	if !ok {
 		log.errorf("Failed to spawn agent '%s'", name)
@@ -48,7 +51,10 @@ spawn_sub_agent :: proc(
 		agent_name,
 		state,
 		behaviour,
-		actod.make_actor_config(children = config.children),
+		actod.make_actor_config(
+			children       = config.children,
+			restart_policy = config.restart_policy,
+		),
 	)
 	if !ok {
 		log.errorf("Failed to spawn sub-agent '%s'", name)

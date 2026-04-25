@@ -15,11 +15,11 @@ Agent_Config :: struct {
 	stream:                  bool,
 	forward_events:          bool,
 	forward_thinking:        bool,
-	// Injected as a user message after tool results to speed up chaining.
 	tool_continuation:       string,
 	validate_tool_args:      bool,
 	trace_sink:              Trace_Sink,
 	accumulate_history:      bool,
+	restart_policy:          actod.Restart_Policy,
 }
 
 DEFAULT_WORKER_COUNT :: 2
@@ -45,6 +45,7 @@ make_agent_config :: proc(
 	validate_tool_args: bool = true,
 	trace_sink: Trace_Sink = {},
 	accumulate_history: bool = true,
+	restart_policy: actod.Restart_Policy = .PERMANENT,
 ) -> Agent_Config {
 	return Agent_Config {
 		llm = llm,
@@ -62,5 +63,6 @@ make_agent_config :: proc(
 		validate_tool_args = validate_tool_args,
 		trace_sink = trace_sink,
 		accumulate_history = accumulate_history,
+		restart_policy = restart_policy,
 	}
 }

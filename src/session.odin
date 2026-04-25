@@ -159,6 +159,18 @@ reset_conversation :: proc(
 	return send_to(agent_actor_name(agent_name), node_name, msg)
 }
 
+cancel_turn :: proc(
+	agent_name: string,
+	request_id: Request_ID,
+	node_name: string = "",
+) -> actod.Send_Error {
+	msg := Cancel_Turn {
+		request_id = request_id,
+		caller     = actod.get_self_pid(),
+	}
+	return send_to(agent_actor_name(agent_name), node_name, msg)
+}
+
 compact_history :: proc(
 	agent_name: string,
 	instruction: string = "",

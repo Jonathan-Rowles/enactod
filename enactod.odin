@@ -350,6 +350,7 @@ make_agent_config :: proc(
 	validate_tool_args: bool = true,
 	trace_sink: Trace_Sink = {},
 	accumulate_history: bool = true,
+	restart_policy: Restart_Policy = .PERMANENT,
 ) -> Agent_Config {
 	return impl.make_agent_config(
 		llm,
@@ -367,6 +368,7 @@ make_agent_config :: proc(
 		validate_tool_args,
 		trace_sink,
 		accumulate_history,
+		restart_policy,
 	)
 }
 
@@ -490,6 +492,18 @@ reset_conversation :: proc(
 	return impl.reset_conversation(agent_name, node_name, request_id)
 }
 
+// Abort the agent's in-flight turn. The agent emits an error
+// Agent_Response{is_error=true, error_msg="(cancelled)"} and returns
+// to IDLE. `request_id` must match the in-flight turn; stale or
+// non-matching cancels are silently ignored.
+cancel_turn :: proc(
+	agent_name: string,
+	request_id: Request_ID,
+	node_name: string = "",
+) -> Send_Error {
+	return impl.cancel_turn(agent_name, request_id, node_name)
+}
+
 // Ask the agent to summarise its history via one dedicated LLM call and
 // collapse it into a single entry. The caller receives a Compact_Result
 // stamped with `request_id` for correlation.
@@ -590,6 +604,10 @@ Chat_Role :: impl.Chat_Role
 
 // Message: drop the agent's chat history.
 Reset_Conversation :: impl.Reset_Conversation
+
+// Message: abort the agent's in-flight turn. Matched against the
+// current request_id; stale cancels are ignored.
+Cancel_Turn :: impl.Cancel_Turn
 
 // Message: ask the agent to compact its history via an LLM summary.
 Compact_History :: impl.Compact_History

@@ -78,6 +78,7 @@ Event_Kind :: enum u8 {
 Agent_Event :: struct {
 	request_id: Request_ID,
 	kind:       Event_Kind,
+	agent_name: Text,
 	subject:    Text,
 	detail:     Text,
 }
@@ -89,6 +90,11 @@ Set_Route :: struct {
 Clear_Route :: struct {}
 
 Reset_Conversation :: struct {
+	request_id: Request_ID,
+	caller:     actod.PID,
+}
+
+Cancel_Turn :: struct {
 	request_id: Request_ID,
 	caller:     actod.PID,
 }
@@ -260,6 +266,7 @@ init_enactod_messages :: proc "contextless" () {
 	actod.register_message_type(Set_Route)
 	actod.register_message_type(Clear_Route)
 	actod.register_message_type(Reset_Conversation)
+	actod.register_message_type(Cancel_Turn)
 	actod.register_message_type(Compact_History)
 	actod.register_message_type(Compact_Result)
 	actod.register_message_type(Arena_Status_Query)
