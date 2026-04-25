@@ -20,7 +20,7 @@ Model :: enum {
 model_string :: proc(model: Model) -> string {
 	switch model {
 	case .Claude_Opus_4:
-		return "claude-opus-4-0-20250514"
+		return "claude-opus-4-20250514"
 	case .Claude_Sonnet_4_5:
 		return "claude-sonnet-4-5-20250929"
 	case .Claude_Haiku_4_5:
