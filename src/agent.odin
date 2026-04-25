@@ -163,7 +163,7 @@ agent_handle_message :: proc(data: ^Agent_State, from: actod.PID, content: any) 
 	case actod.Timer_Tick:
 		handle_timer(data, msg)
 	case Set_Route:
-		data.route_override = msg.llm
+		data.route_override = persist_llm_config(msg.llm, context.allocator)
 		log.infof(
 			"agent:%s route override set: provider=%s model=%s",
 			data.agent_name,
