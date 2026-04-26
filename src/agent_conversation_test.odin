@@ -53,7 +53,8 @@ test_free_chat_entries_clears :: proc(t: ^testing.T) {
 @(private = "file")
 build :: proc(entries: []Chat_Entry, tools: []Tool_Def, format: API_Format) -> string {
 	w := ojson.init_writer(8192, context.temp_allocator)
-	build_request_json(&w, entries, tools, "gpt-test", 0.7, 1024, format)
+	caps := capabilities_for(format, "gpt-test")
+	build_request_json(&w, entries, tools, "gpt-test", caps, 0.7, 1024, format)
 	return ojson.writer_string(&w)
 }
 
@@ -62,13 +63,16 @@ build_anthropic :: proc(
 	entries: []Chat_Entry,
 	cache_mode: Cache_Mode = .NONE,
 	thinking_budget: Maybe(int) = nil,
+	model: string = "claude-test",
 ) -> string {
 	w := ojson.init_writer(8192, context.temp_allocator)
+	caps := capabilities_for(.ANTHROPIC, model)
 	build_request_json(
 		&w,
 		entries,
 		nil,
-		"claude-test",
+		model,
+		caps,
 		0.7,
 		1024,
 		.ANTHROPIC,
@@ -152,7 +156,11 @@ test_build_anthropic_thinking_budget_enables_thinking_block :: proc(t: ^testing.
 	context.allocator = context.temp_allocator
 	entries: [dynamic]Chat_Entry
 	append_user_entry(&entries, "hard problem")
-	json := build_anthropic(entries[:], thinking_budget = 4096)
+	json := build_anthropic(
+		entries[:],
+		thinking_budget = 4096,
+		model = "claude-sonnet-4-5-20250929",
+	)
 	testing.expect(t, strings.contains(json, `"thinking":{"type":"enabled","budget_tokens":4096}`))
 }
 
@@ -162,7 +170,8 @@ test_build_ollama_sets_model_and_num_ctx :: proc(t: ^testing.T) {
 	entries: [dynamic]Chat_Entry
 	append_user_entry(&entries, "hi")
 	w := ojson.init_writer(8192, context.temp_allocator)
-	build_request_json(&w, entries[:], nil, "llama3", 0.5, 1024, .OLLAMA)
+	caps := capabilities_for(.OLLAMA, "llama3")
+	build_request_json(&w, entries[:], nil, "llama3", caps, 0.5, 1024, .OLLAMA)
 	json := ojson.writer_string(&w)
 	testing.expect(t, strings.contains(json, `"model":"llama3"`))
 	testing.expect(t, strings.contains(json, `"num_ctx":32768`))
@@ -174,7 +183,8 @@ test_build_gemini_uses_contents_with_role :: proc(t: ^testing.T) {
 	entries: [dynamic]Chat_Entry
 	append_user_entry(&entries, "hi")
 	w := ojson.init_writer(8192, context.temp_allocator)
-	build_request_json(&w, entries[:], nil, "gemini-test", 0.5, 512, .GEMINI)
+	caps := capabilities_for(.GEMINI, "gemini-test")
+	build_request_json(&w, entries[:], nil, "gemini-test", caps, 0.5, 512, .GEMINI)
 	json := ojson.writer_string(&w)
 	testing.expect(t, strings.contains(json, `"contents":`))
 	testing.expect(t, strings.contains(json, `"role":"user"`))

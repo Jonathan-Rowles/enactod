@@ -31,7 +31,8 @@ OpenAI_Tool_Def :: struct {
 
 OpenAI_Request :: struct {
 	model:       string `json:"model"`,
-	temperature: f32 `json:"temperature"`,
+	temperature: string `json:"temperature,raw,omitempty"`,
+	top_p:       string `json:"top_p,raw,omitempty"`,
 	max_tokens:  int `json:"max_tokens"`,
 	stream:      bool `json:"stream,omitempty"`,
 	messages:    []OpenAI_Message `json:"messages"`,

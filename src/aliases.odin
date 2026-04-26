@@ -18,6 +18,10 @@ Usage_Info :: core.Usage_Info
 Parsed_Response :: core.Parsed_Response
 LLM_Stream_Chunk :: core.LLM_Stream_Chunk
 Provider_Config :: core.Provider_Config
+Capabilities :: core.Capabilities
+DEFAULT_CAPABILITIES :: core.DEFAULT_CAPABILITIES
+Model_Info :: core.Model_Info
+destroy_model_info_list :: core.destroy_model_info_list
 SSE_Event :: core.SSE_Event
 SSE_Parser :: core.SSE_Parser
 NDJSON_Parser :: core.NDJSON_Parser

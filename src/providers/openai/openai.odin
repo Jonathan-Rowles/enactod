@@ -21,6 +21,7 @@ to_request :: proc(
 	entries: []c.Chat_Entry,
 	tools: []c.Tool_Def,
 	model: string,
+	caps: c.Capabilities,
 	temperature: f32,
 	max_tokens: int,
 	stream: bool,
@@ -31,19 +32,25 @@ to_request :: proc(
 		messages[i] = to_message(entry, allocator)
 	}
 
-	wire_tools := make([]OpenAI_Tool_Def, len(tools), allocator)
-	for tool, i in tools {
-		wire_tools[i] = to_tool(tool)
+	wire_tools: []OpenAI_Tool_Def
+	if caps.supports_tools && len(tools) > 0 {
+		wire_tools = make([]OpenAI_Tool_Def, len(tools), allocator)
+		for tool, i in tools {
+			wire_tools[i] = to_tool(tool)
+		}
 	}
 
-	return OpenAI_Request {
-		model = model,
-		temperature = temperature,
+	req := OpenAI_Request {
+		model      = model,
 		max_tokens = max_tokens,
-		stream = stream,
-		messages = messages,
-		tools = wire_tools,
+		stream     = stream,
+		messages   = messages,
+		tools      = wire_tools,
 	}
+	if caps.supports_temperature {
+		req.temperature = fmt.aprintf("%f", temperature, allocator = allocator)
+	}
+	return req
 }
 
 @(private)
@@ -97,9 +104,6 @@ parse_response :: proc(
 	}
 
 	result: c.Parsed_Response
-	// Read usage BEFORE unmarshal: the generator's short-circuit on
-	// Key_Not_Found leaves the reader in a state where some siblings
-	// become unreadable.
 	result.usage.input_tokens, _ = ojson.read_int(reader, "usage.prompt_tokens")
 	result.usage.output_tokens, _ = ojson.read_int(reader, "usage.completion_tokens")
 

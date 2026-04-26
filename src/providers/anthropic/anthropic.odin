@@ -22,6 +22,7 @@ to_request :: proc(
 	entries: []c.Chat_Entry,
 	tools: []c.Tool_Def,
 	model: string,
+	caps: c.Capabilities,
 	temperature: f32,
 	max_tokens: int,
 	thinking_budget: Maybe(int),
@@ -35,14 +36,21 @@ to_request :: proc(
 		stream     = stream,
 	}
 
-	if budget, enabled := thinking_budget.?; enabled && budget >= 1024 {
+	thinking_enabled := false
+	if budget, set := thinking_budget.?;
+	   set && caps.supports_thinking && budget >= caps.min_thinking_budget {
 		req.thinking = {
 			type          = "enabled",
 			budget_tokens = budget,
 		}
-	} else {
+		thinking_enabled = true
+	}
+
+	if caps.supports_temperature && !thinking_enabled {
 		req.temperature = fmt.aprintf("%f", temperature, allocator = allocator)
 	}
+
+	cache_enabled := cache_mode != .NONE && caps.supports_cache
 
 	for entry in entries {
 		content_s := c.resolve(entry.content)
@@ -50,7 +58,7 @@ to_request :: proc(
 			block := Anthropic_Text_Block {
 				text = content_s,
 			}
-			if cache_mode != .NONE {
+			if cache_enabled {
 				block.cache_control = {
 					type = "ephemeral",
 				}
@@ -94,14 +102,17 @@ to_request :: proc(
 		content_s := c.resolve(entry.content)
 		thinking_s := c.resolve(entry.thinking)
 		signature_s := c.resolve(entry.signature)
+		origin_s := c.resolve(entry.origin_model)
+		origin_matches := len(origin_s) == 0 || origin_s == model
+		emit_thinking := thinking_enabled && len(thinking_s) > 0 && origin_matches
 
 		if entry.role == .ASSISTANT && len(entry.tool_calls) > 0 {
 			count := len(entry.tool_calls)
-			if len(thinking_s) > 0 {count += 1}
+			if emit_thinking {count += 1}
 			if len(content_s) > 0 {count += 1}
 			blocks := make([]Anthropic_Content_Block, count, allocator)
 			idx := 0
-			if len(thinking_s) > 0 {
+			if emit_thinking {
 				blocks[idx] = Anthropic_Thinking_Block {
 					thinking  = thinking_s,
 					signature = signature_s,
@@ -134,7 +145,7 @@ to_request :: proc(
 		if entry.role == .USER && len(entry.cache_blocks) > 0 {
 			blocks := make([]Anthropic_Content_Block, len(entry.cache_blocks), allocator)
 			last := len(entry.cache_blocks) - 1
-			apply_cache_control := cache_mode != .NONE && !first_user_emitted
+			apply_cache_control := cache_enabled && !first_user_emitted
 			for cb, idx in entry.cache_blocks {
 				block := Anthropic_Text_Block {
 					text = c.resolve(cb),
@@ -155,7 +166,7 @@ to_request :: proc(
 		if entry.role == .USER {first_user_emitted = true}
 
 		role := entry.role == .ASSISTANT ? "assistant" : "user"
-		if entry.role == .ASSISTANT && len(thinking_s) > 0 {
+		if entry.role == .ASSISTANT && emit_thinking {
 			blocks := make([]Anthropic_Content_Block, 2, allocator)
 			blocks[0] = Anthropic_Thinking_Block {
 				thinking  = thinking_s,
@@ -188,7 +199,7 @@ to_request :: proc(
 			description  = tool.description,
 			input_schema = schema,
 		}
-		if cache_mode != .NONE && idx == len(tools) - 1 {
+		if cache_enabled && idx == len(tools) - 1 {
 			wire_tools[idx].cache_control = {
 				type = "ephemeral",
 			}

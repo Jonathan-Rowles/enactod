@@ -99,3 +99,71 @@ test_preset_headers_flatten :: proc(t: ^testing.T) {
 	llm := openai("k", Model.GPT_4_1_Mini, headers = map[string]string{"X-Tenant" = "demo"})
 	testing.expect_value(t, llm.provider.extra_headers, "X-Tenant: demo")
 }
+
+@(test)
+test_groq_preset :: proc(t: ^testing.T) {
+	context.allocator = context.temp_allocator
+	llm := groq("gsk_key", "llama-3.3-70b-versatile")
+	testing.expect_value(t, llm.provider.name, "groq")
+	testing.expect_value(t, llm.provider.base_url, "https://api.groq.com/openai/v1")
+	testing.expect_value(t, llm.provider.format, API_Format.OPENAI_COMPAT)
+	testing.expect_value(t, llm.provider.api_key, "gsk_key")
+}
+
+@(test)
+test_openrouter_preset_app_attribution :: proc(t: ^testing.T) {
+	context.allocator = context.temp_allocator
+	llm := openrouter(
+		"or_key",
+		"meta-llama/llama-3.1-405b-instruct",
+		app_name = "MyApp",
+		referer = "https://my.app",
+	)
+	testing.expect_value(t, llm.provider.name, "openrouter")
+	testing.expect_value(t, llm.provider.base_url, "https://openrouter.ai/api/v1")
+	testing.expect_value(t, llm.provider.format, API_Format.OPENAI_COMPAT)
+	testing.expect(
+		t,
+		llm.provider.extra_headers != "",
+		"app_name + referer should populate headers",
+	)
+}
+
+@(test)
+test_together_preset :: proc(t: ^testing.T) {
+	context.allocator = context.temp_allocator
+	llm := together("tgt_key", "Qwen/Qwen2.5-Coder-32B-Instruct")
+	testing.expect_value(t, llm.provider.name, "together")
+	testing.expect_value(t, llm.provider.base_url, "https://api.together.xyz/v1")
+	testing.expect_value(t, llm.provider.format, API_Format.OPENAI_COMPAT)
+}
+
+@(test)
+test_fireworks_preset :: proc(t: ^testing.T) {
+	context.allocator = context.temp_allocator
+	llm := fireworks("fw_key", "accounts/fireworks/models/llama-v3p3-70b-instruct")
+	testing.expect_value(t, llm.provider.name, "fireworks")
+	testing.expect_value(t, llm.provider.base_url, "https://api.fireworks.ai/inference/v1")
+	testing.expect_value(t, llm.provider.format, API_Format.OPENAI_COMPAT)
+}
+
+@(test)
+test_lmstudio_preset_local_no_real_key :: proc(t: ^testing.T) {
+	context.allocator = context.temp_allocator
+	llm := lmstudio("local-model")
+	testing.expect_value(t, llm.provider.name, "lmstudio")
+	testing.expect_value(t, llm.provider.base_url, "http://localhost:1234/v1")
+	testing.expect_value(t, llm.provider.format, API_Format.OPENAI_COMPAT)
+	testing.expect_value(t, llm.provider.api_key, "lm-studio")
+	testing.expect_value(t, llm.enable_rate_limiting, false)
+}
+
+@(test)
+test_vllm_preset_passthrough :: proc(t: ^testing.T) {
+	context.allocator = context.temp_allocator
+	llm := vllm("http://gpu-host:8000/v1", "Qwen/Qwen2.5-72B-Instruct")
+	testing.expect_value(t, llm.provider.name, "vllm")
+	testing.expect_value(t, llm.provider.base_url, "http://gpu-host:8000/v1")
+	testing.expect_value(t, llm.provider.format, API_Format.OPENAI_COMPAT)
+	testing.expect_value(t, llm.enable_rate_limiting, false)
+}

@@ -287,6 +287,255 @@ openai_compat :: proc(
 	)
 }
 
+DEFAULT_GROQ_URL :: impl.DEFAULT_GROQ_URL
+DEFAULT_OPENROUTER_URL :: impl.DEFAULT_OPENROUTER_URL
+DEFAULT_TOGETHER_URL :: impl.DEFAULT_TOGETHER_URL
+DEFAULT_FIREWORKS_URL :: impl.DEFAULT_FIREWORKS_URL
+DEFAULT_LMSTUDIO_URL :: impl.DEFAULT_LMSTUDIO_URL
+
+// Groq preset. Wraps openai_compat with Groq's base URL.
+groq :: proc(
+	api_key: string,
+	model: Model_ID,
+	temperature: f32 = impl.DEFAULT_TEMPERATURE,
+	max_tokens: int = impl.DEFAULT_MAX_TOKENS,
+	timeout: time.Duration = impl.DEFAULT_OPENAI_TIMEOUT,
+	enable_rate_limiting: bool = true,
+	base_url: string = impl.DEFAULT_GROQ_URL,
+	headers: map[string]string = nil,
+) -> LLM_Config {
+	return impl.groq(
+		api_key,
+		model,
+		temperature,
+		max_tokens,
+		timeout,
+		enable_rate_limiting,
+		base_url,
+		headers,
+	)
+}
+
+// OpenRouter preset. `app_name` and `referer` populate the X-Title and
+// HTTP-Referer headers used by OpenRouter for app attribution.
+openrouter :: proc(
+	api_key: string,
+	model: Model_ID,
+	temperature: f32 = impl.DEFAULT_TEMPERATURE,
+	max_tokens: int = impl.DEFAULT_MAX_TOKENS,
+	timeout: time.Duration = impl.DEFAULT_OPENAI_TIMEOUT,
+	enable_rate_limiting: bool = true,
+	app_name: string = "",
+	referer: string = "",
+	base_url: string = impl.DEFAULT_OPENROUTER_URL,
+	headers: map[string]string = nil,
+) -> LLM_Config {
+	return impl.openrouter(
+		api_key,
+		model,
+		temperature,
+		max_tokens,
+		timeout,
+		enable_rate_limiting,
+		app_name,
+		referer,
+		base_url,
+		headers,
+	)
+}
+
+// Together AI preset.
+together :: proc(
+	api_key: string,
+	model: Model_ID,
+	temperature: f32 = impl.DEFAULT_TEMPERATURE,
+	max_tokens: int = impl.DEFAULT_MAX_TOKENS,
+	timeout: time.Duration = impl.DEFAULT_OPENAI_TIMEOUT,
+	enable_rate_limiting: bool = true,
+	base_url: string = impl.DEFAULT_TOGETHER_URL,
+	headers: map[string]string = nil,
+) -> LLM_Config {
+	return impl.together(
+		api_key,
+		model,
+		temperature,
+		max_tokens,
+		timeout,
+		enable_rate_limiting,
+		base_url,
+		headers,
+	)
+}
+
+// Fireworks AI preset.
+fireworks :: proc(
+	api_key: string,
+	model: Model_ID,
+	temperature: f32 = impl.DEFAULT_TEMPERATURE,
+	max_tokens: int = impl.DEFAULT_MAX_TOKENS,
+	timeout: time.Duration = impl.DEFAULT_OPENAI_TIMEOUT,
+	enable_rate_limiting: bool = true,
+	base_url: string = impl.DEFAULT_FIREWORKS_URL,
+	headers: map[string]string = nil,
+) -> LLM_Config {
+	return impl.fireworks(
+		api_key,
+		model,
+		temperature,
+		max_tokens,
+		timeout,
+		enable_rate_limiting,
+		base_url,
+		headers,
+	)
+}
+
+// LM Studio preset. Local inference; no real auth, longer timeout.
+lmstudio :: proc(
+	model: Model_ID,
+	temperature: f32 = impl.DEFAULT_TEMPERATURE,
+	max_tokens: int = impl.DEFAULT_MAX_TOKENS,
+	timeout: time.Duration = impl.DEFAULT_OLLAMA_TIMEOUT,
+	enable_rate_limiting: bool = false,
+	base_url: string = impl.DEFAULT_LMSTUDIO_URL,
+	headers: map[string]string = nil,
+) -> LLM_Config {
+	return impl.lmstudio(
+		model,
+		temperature,
+		max_tokens,
+		timeout,
+		enable_rate_limiting,
+		base_url,
+		headers,
+	)
+}
+
+// vLLM preset. Self-hosted; pass base_url. api_key optional.
+vllm :: proc(
+	base_url: string,
+	model: Model_ID,
+	api_key: string = "",
+	temperature: f32 = impl.DEFAULT_TEMPERATURE,
+	max_tokens: int = impl.DEFAULT_MAX_TOKENS,
+	timeout: time.Duration = impl.DEFAULT_OPENAI_TIMEOUT,
+	enable_rate_limiting: bool = false,
+	headers: map[string]string = nil,
+) -> LLM_Config {
+	return impl.vllm(
+		base_url,
+		model,
+		api_key,
+		temperature,
+		max_tokens,
+		timeout,
+		enable_rate_limiting,
+		headers,
+	)
+}
+
+// Per model feature flags. Resolved by `capabilities_for` from a provider
+// format + raw model id. Used at request build time to decide whether to
+// emit fields like `temperature`, `thinking`, or `cache_control`. Unknown
+// model ids fall through to `DEFAULT_CAPABILITIES` (permissive).
+Capabilities :: impl.Capabilities
+
+// Permissive defaults applied to unknown model ids: temperature, top_p,
+// tools, streaming all on; thinking and cache off.
+DEFAULT_CAPABILITIES :: impl.DEFAULT_CAPABILITIES
+
+// Resolve a model's capabilities by provider format + raw id. Falls back
+// to `DEFAULT_CAPABILITIES` for unknown ids. Cheap (prefix match).
+capabilities_for :: proc(format: API_Format, model: string) -> Capabilities {
+	return impl.capabilities_for(format, model)
+}
+
+// Result of `list_models`. Strings are heap allocated under the caller's
+// allocator; release the whole slice via `destroy_model_info_list`.
+Model_Info :: impl.Model_Info
+
+// Free a Model_Info slice and the strings inside. Must use the same
+// allocator that was passed to `list_models`.
+destroy_model_info_list :: proc(list: []Model_Info, allocator := context.allocator) {
+	impl.destroy_model_info_list(list, allocator)
+}
+
+// Query the provider's `/models` endpoint (or equivalent) and return the
+// available models. Blocking. Local only — for remote nodes, run this
+// inside a control message handler on that node and ship the result back.
+//
+// Each provider's API exposes different fields, so capabilities are
+// prefix-matched from the hand-written tables and overlaid with whatever
+// the response surfaces (Gemini context window, OpenRouter
+// supported_parameters, etc.). Unknown ids land on `DEFAULT_CAPABILITIES`.
+list_models :: proc(
+	provider: Provider_Config,
+	allocator := context.allocator,
+) -> (
+	[]Model_Info,
+	bool,
+) {
+	return impl.list_models(provider, allocator)
+}
+
+// Resolve a model's capabilities with API enrichment when the provider
+// supports it. Currently only Ollama does extra work (one /api/show POST
+// per call to read the `capabilities` array introduced in 0.4+). Other
+// providers return `capabilities_for(format, model_id)` unchanged. Use
+// `capabilities_for` directly when you don't want the network hop.
+enrich_model_capabilities :: proc(provider: Provider_Config, model_id: string) -> Capabilities {
+	return impl.enrich_model_capabilities(provider, model_id)
+}
+
+// Catalog entry for a known provider preset. `env_var` is the conventional
+// environment variable for the API key (informational only; enactod does
+// not read it). Empty for providers that don't need an API key (Ollama,
+// LM Studio). `build` constructs a complete LLM_Config when given an api
+// key, model id, and base URL — used by `build_llm`.
+Provider_Descriptor :: impl.Provider_Descriptor
+
+// All known providers: anthropic, openai, gemini, ollama, groq, openrouter,
+// together, fireworks, lmstudio. Returned slice is owned by enactod;
+// treat as read-only.
+list_known_providers :: proc() -> []Provider_Descriptor {
+	return impl.list_known_providers()
+}
+
+// Look up a provider by name. Returns a pointer into the static catalog.
+find_provider_descriptor :: proc(name: string) -> (^Provider_Descriptor, bool) {
+	return impl.find_provider_descriptor(name)
+}
+
+// Build an LLM_Config for a known provider by name. Pass `base_url = ""`
+// to use the provider's default URL. The api_key is ignored for providers
+// that don't need one (Ollama, LM Studio).
+build_llm :: proc(
+	name: string,
+	api_key: string,
+	model: Model_ID,
+	base_url: string = "",
+) -> (
+	LLM_Config,
+	bool,
+) {
+	return impl.build_llm(name, api_key, model, base_url)
+}
+
+// Build a Provider_Config for a known provider. Pass `base_url = ""` to
+// use the provider's default. When `api_key` is empty, falls back to
+// the descriptor's `api_key_default` (e.g. "lm-studio" for LM Studio).
+// Useful for callers that want just the provider half (e.g. `list_models`).
+build_provider :: proc(
+	name: string,
+	api_key: string = "",
+	base_url: string = "",
+) -> (
+	Provider_Config,
+	bool,
+) {
+	return impl.build_provider(name, api_key, base_url)
+}
+
 // Message: override the agent's route. Takes effect on the next turn; the
 // in flight call finishes on the old route. Persists until Clear_Route.
 Set_Route :: impl.Set_Route

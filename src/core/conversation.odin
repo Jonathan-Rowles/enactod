@@ -37,6 +37,7 @@ append_assistant_entry :: proc(
 	tool_calls: []Parsed_Tool_Call = nil,
 	thinking: Text = {},
 	signature: Text = {},
+	origin_model: Text = {},
 	allocator := context.allocator,
 ) {
 	tc: []Tool_Call_Entry
@@ -59,6 +60,7 @@ append_assistant_entry :: proc(
 			tool_calls = tc,
 			thinking = persist_text(thinking, allocator),
 			signature = persist_text(signature, allocator),
+			origin_model = persist_text(origin_model, allocator),
 		},
 	)
 }
@@ -85,6 +87,7 @@ free_chat_entries :: proc(entries: ^[dynamic]Chat_Entry) {
 		free_text(entry.tool_call_id)
 		free_text(entry.thinking)
 		free_text(entry.signature)
+		free_text(entry.origin_model)
 		for tc in entry.tool_calls {
 			free_text(tc.id)
 			free_text(tc.name)

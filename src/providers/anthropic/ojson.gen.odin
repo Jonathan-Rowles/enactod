@@ -399,6 +399,12 @@ unmarshal_anthropic_request_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (re
 	}
 
 	{
+		raw_val, raw_err := oj.read_raw_elem(r, elem, "top_p")
+		if raw_err != .OK && raw_err != .Key_Not_Found && raw_err != .Type_Mismatch do return result, raw_err
+		if raw_err == .OK do result.top_p = raw_val
+	}
+
+	{
 		nested_elem, nested_err := oj.obj_element_from(r, elem, "thinking")
 		if nested_err == .OK {
 			result.thinking, err = unmarshal_anthropic_thinking_elem(r, nested_elem)
@@ -449,7 +455,7 @@ unmarshal_anthropic_request_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (re
 }
 
 is_zero_anthropic_request :: proc(v: Anthropic_Request) -> bool {
-	return v.model == "" && v.max_tokens == 0 && v.temperature == "" && is_zero_anthropic_thinking(v.thinking) && !v.stream && len(v.system) == 0 && len(v.messages) == 0 && len(v.tools) == 0
+	return v.model == "" && v.max_tokens == 0 && v.temperature == "" && v.top_p == "" && is_zero_anthropic_thinking(v.thinking) && !v.stream && len(v.system) == 0 && len(v.messages) == 0 && len(v.tools) == 0
 }
 
 // Marshals Anthropic_Request to JSON
@@ -462,6 +468,10 @@ marshal_anthropic_request :: proc(w: ^oj.Writer, value: Anthropic_Request) {
 	if value.temperature != "" {
 		oj.write_key(w, "temperature")
 		oj.write_raw(w, value.temperature)
+	}
+	if value.top_p != "" {
+		oj.write_key(w, "top_p")
+		oj.write_raw(w, value.top_p)
 	}
 	if !is_zero_anthropic_thinking(value.thinking) {
 		oj.write_key(w, "thinking")

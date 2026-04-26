@@ -57,6 +57,7 @@ Chat_Entry :: struct {
 	thinking:     Text,
 	signature:    Text,
 	cache_blocks: []Text,
+	origin_model: Text,
 }
 
 Parsed_Tool_Call :: struct {
@@ -95,4 +96,42 @@ Provider_Config :: struct {
 	api_key:       string,
 	format:        API_Format,
 	extra_headers: string,
+}
+
+Capabilities :: struct {
+	supports_temperature: bool,
+	supports_top_p:       bool,
+	supports_thinking:    bool,
+	min_thinking_budget:  int,
+	max_thinking_budget:  int,
+	supports_cache:       bool,
+	supports_tools:       bool,
+	supports_streaming:   bool,
+	context_window:       int,
+	max_output_tokens:    int,
+}
+
+DEFAULT_CAPABILITIES :: Capabilities {
+	supports_temperature = true,
+	supports_top_p       = true,
+	supports_tools       = true,
+	supports_streaming   = true,
+}
+
+Model_Info :: struct {
+	id:             string,
+	display_name:   string,
+	provider_name:  string,
+	context_window: int,
+	capabilities:   Capabilities,
+	created_unix:   i64,
+}
+
+destroy_model_info_list :: proc(list: []Model_Info, allocator := context.allocator) {
+	for m in list {
+		delete(m.id, allocator)
+		delete(m.display_name, allocator)
+		delete(m.provider_name, allocator)
+	}
+	delete(list, allocator)
 }

@@ -230,17 +230,22 @@ unmarshal_ollama_options_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (resul
 	if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
 
 	{
-		val: f64
-		val, err = oj.read_f64_elem(r, elem, "temperature")
-		if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
-		if err == .OK do result.temperature = f32(val)
+		raw_val, raw_err := oj.read_raw_elem(r, elem, "temperature")
+		if raw_err != .OK && raw_err != .Key_Not_Found && raw_err != .Type_Mismatch do return result, raw_err
+		if raw_err == .OK do result.temperature = raw_val
+	}
+
+	{
+		raw_val, raw_err := oj.read_raw_elem(r, elem, "top_p")
+		if raw_err != .OK && raw_err != .Key_Not_Found && raw_err != .Type_Mismatch do return result, raw_err
+		if raw_err == .OK do result.top_p = raw_val
 	}
 
 	return
 }
 
 is_zero_ollama_options :: proc(v: Ollama_Options) -> bool {
-	return v.num_ctx == 0 && v.temperature == 0
+	return v.num_ctx == 0 && v.temperature == "" && v.top_p == ""
 }
 
 // Marshals Ollama_Options to JSON
@@ -250,9 +255,13 @@ marshal_ollama_options :: proc(w: ^oj.Writer, value: Ollama_Options) {
 		oj.write_key(w, "num_ctx")
 		oj.write_int(w, value.num_ctx)
 	}
-	if value.temperature != 0 {
+	if value.temperature != "" {
 		oj.write_key(w, "temperature")
-		oj.write_f32(w, value.temperature)
+		oj.write_raw(w, value.temperature)
+	}
+	if value.top_p != "" {
+		oj.write_key(w, "top_p")
+		oj.write_raw(w, value.top_p)
 	}
 	oj.write_object_end(w)
 }

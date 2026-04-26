@@ -236,8 +236,8 @@ handle_load_history :: proc(data: ^Agent_State, msg: Load_History) {
 			msg.caller,
 			Load_History_Result {
 				request_id = msg.request_id,
-				is_error   = true,
-				error_msg  = text("agent is busy", agent_arena(data)),
+				is_error = true,
+				error_msg = text("agent is busy", agent_arena(data)),
 			},
 		)
 		return
@@ -254,8 +254,8 @@ handle_load_history :: proc(data: ^Agent_State, msg: Load_History) {
 			msg.caller,
 			Load_History_Result {
 				request_id = msg.request_id,
-				is_error   = true,
-				error_msg  = text("invalid JSON", agent_arena(data)),
+				is_error = true,
+				error_msg = text("invalid JSON", agent_arena(data)),
 			},
 		)
 		return
@@ -267,8 +267,8 @@ handle_load_history :: proc(data: ^Agent_State, msg: Load_History) {
 			msg.caller,
 			Load_History_Result {
 				request_id = msg.request_id,
-				is_error   = true,
-				error_msg  = text("invalid history payload", agent_arena(data)),
+				is_error = true,
+				error_msg = text("invalid history payload", agent_arena(data)),
 			},
 		)
 		return
@@ -280,7 +280,7 @@ handle_load_history :: proc(data: ^Agent_State, msg: Load_History) {
 				msg.caller,
 				Load_History_Result {
 					request_id = msg.request_id,
-					is_error   = true,
+					is_error = true,
 					error_msg = text(
 						fmt.tprintf("unknown role %q at messages[%d]", entry.role, i),
 						agent_arena(data),
@@ -300,8 +300,7 @@ handle_load_history :: proc(data: ^Agent_State, msg: Load_History) {
 		case "user":
 			append_user_entry(&data.messages, entry.content)
 		case "assistant":
-			append_assistant_entry(&data.messages, text(entry.content,
-          agent_arena(data)))
+			append_assistant_entry(&data.messages, text(entry.content, agent_arena(data)))
 		}
 	}
 
@@ -416,6 +415,7 @@ dispatch_compact_call :: proc(data: ^Agent_State) {
 
 	data.current_format = route.provider.format
 	model_str := resolve_model_string(route.model)
+	caps := capabilities_for(route.provider.format, model_str)
 
 	ojson.writer_reset(&data.writer)
 	build_request_json(
@@ -423,6 +423,7 @@ dispatch_compact_call :: proc(data: ^Agent_State) {
 		data.messages[:],
 		nil,
 		model_str,
+		caps,
 		route.temperature,
 		route.max_tokens,
 		route.provider.format,
@@ -799,6 +800,7 @@ process_parsed_response :: proc(data: ^Agent_State, parsed: Parsed_Response) {
 			parsed.tool_calls,
 			parsed.thinking,
 			parsed.thinking_signature,
+			data.current_model_text,
 		)
 
 		data.pending_tools = len(parsed.tool_calls)
@@ -1011,6 +1013,7 @@ process_parsed_response :: proc(data: ^Agent_State, parsed: Parsed_Response) {
 			parsed.content,
 			thinking = parsed.thinking,
 			signature = parsed.thinking_signature,
+			origin_model = data.current_model_text,
 		)
 		send_success_response(data, parsed.content)
 	}
@@ -1165,6 +1168,7 @@ dispatch_llm_call :: proc(data: ^Agent_State) {
 	}
 
 	model_str := resolve_model_string(route.model)
+	caps := capabilities_for(route.provider.format, model_str)
 
 	tool_defs: [dynamic]Tool_Def
 	defer delete(tool_defs)
@@ -1178,6 +1182,7 @@ dispatch_llm_call :: proc(data: ^Agent_State) {
 		data.messages[:],
 		tool_defs[:],
 		model_str,
+		caps,
 		route.temperature,
 		route.max_tokens,
 		route.provider.format,

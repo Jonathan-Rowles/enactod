@@ -38,8 +38,6 @@ HTTP_Client :: struct {
 	write_ctx:    HTTP_Write_Context,
 	header_ctx:   HTTP_Header_Context,
 	stream_ctx:   HTTP_Stream_Context,
-	// Owned by the ODIN_TEST stub (^HTTP_Stub_State). Unused in production —
-	// 8 bytes of overhead per client, zero code on the real path.
 	stub_state:   rawptr,
 }
 
@@ -81,6 +79,14 @@ http_post :: proc(client: ^HTTP_Client, req: HTTP_Request) -> (HTTP_Response, HT
 		return http_stub_post(client, req)
 	} else {
 		return http_real_post(client, req)
+	}
+}
+
+http_get :: proc(client: ^HTTP_Client, req: HTTP_Request) -> (HTTP_Response, HTTP_Error, string) {
+	when ODIN_TEST {
+		return http_stub_post(client, req)
+	} else {
+		return http_real_get(client, req)
 	}
 }
 
@@ -170,6 +176,58 @@ http_real_post :: proc(
 		curl.easy_setopt(client.handle, .WRITEDATA, &client.write_ctx)
 	}
 
+	if code != .E_OK {
+		err_msg := string(curl.easy_strerror(code))
+		if code == .E_OPERATION_TIMEDOUT {
+			return {}, .Timeout, err_msg
+		}
+		return {}, .Request_Failed, err_msg
+	}
+
+	status: c.long = 0
+	curl.easy_getinfo(client.handle, .RESPONSE_CODE, &status)
+
+	return HTTP_Response {
+			status = u32(status),
+			body = client.response_buf[:],
+			headers = client.header_buf[:],
+		},
+		.OK,
+		""
+}
+
+@(private = "file")
+http_real_get :: proc(
+	client: ^HTTP_Client,
+	req: HTTP_Request,
+) -> (
+	HTTP_Response,
+	HTTP_Error,
+	string,
+) {
+	clear(&client.response_buf)
+	clear(&client.header_buf)
+
+	url_cstr := strings.clone_to_cstring(req.url, context.temp_allocator)
+	curl.easy_setopt(client.handle, .URL, url_cstr)
+	curl.easy_setopt(client.handle, .HTTPGET, c.long(1))
+
+	hdr_list: ^curl.slist = nil
+	for h in req.headers {
+		if len(h) == 0 {
+			continue
+		}
+		hdr_list = curl.slist_append(hdr_list, strings.clone_to_cstring(h, context.temp_allocator))
+	}
+	defer curl.slist_free_all(hdr_list)
+	curl.easy_setopt(client.handle, .HTTPHEADER, hdr_list)
+
+	if req.timeout > 0 {
+		timeout_ms := i64(time.duration_milliseconds(req.timeout))
+		curl.easy_setopt(client.handle, .TIMEOUT_MS, c.long(timeout_ms))
+	}
+
+	code := curl.easy_perform(client.handle)
 	if code != .E_OK {
 		err_msg := string(curl.easy_strerror(code))
 		if code == .E_OPERATION_TIMEDOUT {

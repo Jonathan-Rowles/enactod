@@ -19,16 +19,13 @@ build_auth :: proc(api_key: string) -> string {
 
 build_extra_headers :: proc(_: ^strings.Builder) {}
 
-// nil → omit thinkingConfig (model default; 2.5 Pro/Flash think by default).
-// 0   → disable thinking (valid on Flash/Flash-Lite).
-// -1  → dynamic budget (Pro), request thought summaries.
-// >0  → fixed budget, request thought summaries.
 build_thinking_config :: proc(
 	thinking_budget: Maybe(int),
+	caps: c.Capabilities,
 	allocator := context.temp_allocator,
 ) -> string {
 	budget, enabled := thinking_budget.?
-	if !enabled {
+	if !enabled || !caps.supports_thinking {
 		return ""
 	}
 	include_thoughts := budget != 0
@@ -43,17 +40,21 @@ build_thinking_config :: proc(
 to_request :: proc(
 	entries: []c.Chat_Entry,
 	tools: []c.Tool_Def,
+	caps: c.Capabilities,
 	temperature: f32,
 	max_tokens: int,
 	thinking_budget: Maybe(int),
 	allocator := context.temp_allocator,
 ) -> Gemini_Request {
+	gen_config := Gemini_Generation_Config {
+		max_output_tokens = max_tokens,
+		thinking_config   = build_thinking_config(thinking_budget, caps, allocator),
+	}
+	if caps.supports_temperature {
+		gen_config.temperature = fmt.aprintf("%f", temperature, allocator = allocator)
+	}
 	req := Gemini_Request {
-		generation_config = Gemini_Generation_Config {
-			temperature = temperature,
-			max_output_tokens = max_tokens,
-			thinking_config = build_thinking_config(thinking_budget, allocator),
-		},
+		generation_config = gen_config,
 	}
 
 	for entry in entries {
@@ -183,8 +184,6 @@ parse_response :: proc(
 	}
 	candidate := resp.candidates[0]
 
-	// Defensive re-read — gen-ojson may drop finishReason when the nested
-	// content parse returns Key_Not_Found from a missing optional Part field.
 	finish_reason_str := candidate.finish_reason
 	if len(finish_reason_str) == 0 {
 		finish_reason_str, _ = ojson.read_string(reader, "candidates.0.finishReason")
@@ -257,13 +256,8 @@ parse_response :: proc(
 		copy(result.tool_calls, tool_calls[:])
 	}
 
-	// Gemini reports prompt tokens inclusive of cached. We surface the
-	// cached slice via cache_read_input_tokens so agents can attribute
-	// hits without double-counting input.
 	result.usage.input_tokens = resp.usage_metadata.prompt_token_count
 	result.usage.cache_read_input_tokens = resp.usage_metadata.cached_content_token_count
-	// Thinking tokens are output-side on Gemini — fold into output so
-	// totals match what the API bills.
 	result.usage.output_tokens =
 		resp.usage_metadata.candidates_token_count + resp.usage_metadata.thoughts_token_count
 	return result
@@ -361,10 +355,6 @@ process_sse :: proc(
 		}
 	}
 
-	// Gemini may split usageMetadata into a chunk separate from the one
-	// carrying finishReason, and cached/thoughts counts often land only
-	// on that tail chunk. Accumulate whenever the field is present so
-	// the DONE chunk always uses the latest values.
 	if ojson.exists(reader, "usageMetadata") {
 		in_tok, in_err := ojson.read_int(reader, "usageMetadata.promptTokenCount")
 		out_tok, out_err := ojson.read_int(reader, "usageMetadata.candidatesTokenCount")

@@ -13,6 +13,7 @@ build_request_json :: proc(
 	entries: []Chat_Entry,
 	tools: []Tool_Def,
 	model: string,
+	caps: Capabilities,
 	temperature: f32,
 	max_tokens: int,
 	format: API_Format = .OPENAI_COMPAT,
@@ -23,13 +24,14 @@ build_request_json :: proc(
 	ojson.writer_reset(w)
 	switch format {
 	case .OPENAI_COMPAT:
-		req := openai.to_request(entries, tools, model, temperature, max_tokens, stream)
+		req := openai.to_request(entries, tools, model, caps, temperature, max_tokens, stream)
 		openai.marshal_request(w, req)
 	case .ANTHROPIC:
 		req := anthropic.to_request(
 			entries,
 			tools,
 			model,
+			caps,
 			temperature,
 			max_tokens,
 			thinking_budget,
@@ -38,10 +40,10 @@ build_request_json :: proc(
 		)
 		anthropic.marshal_request(w, req)
 	case .OLLAMA:
-		req := ollama.to_request(entries, tools, model, temperature, stream, thinking_budget)
+		req := ollama.to_request(entries, tools, model, caps, temperature, stream, thinking_budget)
 		ollama.marshal_request(w, req)
 	case .GEMINI:
-		req := gemini.to_request(entries, tools, temperature, max_tokens, thinking_budget)
+		req := gemini.to_request(entries, tools, caps, temperature, max_tokens, thinking_budget)
 		gemini.marshal_request(w, req)
 	}
 }

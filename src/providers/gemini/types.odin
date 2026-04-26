@@ -41,7 +41,8 @@ Gemini_Tool :: struct {
 }
 
 Gemini_Generation_Config :: struct {
-	temperature:       f32 `json:"temperature"`,
+	temperature:       string `json:"temperature,raw,omitempty"`,
+	top_p:             string `json:"topP,raw,omitempty"`,
 	max_output_tokens: int `json:"maxOutputTokens"`,
 	thinking_config:   string `json:"thinkingConfig,raw,omitempty"`,
 }

@@ -348,10 +348,15 @@ unmarshal_gemini_generation_config :: proc(r: ^oj.Reader, path: string = "") -> 
 // Unmarshals JSON element into Gemini_Generation_Config
 unmarshal_gemini_generation_config_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (result: Gemini_Generation_Config, err: oj.Error) {
 	{
-		val: f64
-		val, err = oj.read_f64_elem(r, elem, "temperature")
-		if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
-		if err == .OK do result.temperature = f32(val)
+		raw_val, raw_err := oj.read_raw_elem(r, elem, "temperature")
+		if raw_err != .OK && raw_err != .Key_Not_Found && raw_err != .Type_Mismatch do return result, raw_err
+		if raw_err == .OK do result.temperature = raw_val
+	}
+
+	{
+		raw_val, raw_err := oj.read_raw_elem(r, elem, "topP")
+		if raw_err != .OK && raw_err != .Key_Not_Found && raw_err != .Type_Mismatch do return result, raw_err
+		if raw_err == .OK do result.top_p = raw_val
 	}
 
 	result.max_output_tokens, err = oj.read_int_elem(r, elem, "maxOutputTokens")
@@ -367,14 +372,20 @@ unmarshal_gemini_generation_config_elem :: proc(r: ^oj.Reader, elem: oj.Element)
 }
 
 is_zero_gemini_generation_config :: proc(v: Gemini_Generation_Config) -> bool {
-	return v.temperature == 0 && v.max_output_tokens == 0 && v.thinking_config == ""
+	return v.temperature == "" && v.top_p == "" && v.max_output_tokens == 0 && v.thinking_config == ""
 }
 
 // Marshals Gemini_Generation_Config to JSON
 marshal_gemini_generation_config :: proc(w: ^oj.Writer, value: Gemini_Generation_Config) {
 	oj.write_object_start(w)
-	oj.write_key(w, "temperature")
-	oj.write_f32(w, value.temperature)
+	if value.temperature != "" {
+		oj.write_key(w, "temperature")
+		oj.write_raw(w, value.temperature)
+	}
+	if value.top_p != "" {
+		oj.write_key(w, "topP")
+		oj.write_raw(w, value.top_p)
+	}
 	oj.write_key(w, "maxOutputTokens")
 	oj.write_int(w, value.max_output_tokens)
 	if value.thinking_config != "" {

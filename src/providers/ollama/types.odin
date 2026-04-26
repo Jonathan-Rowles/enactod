@@ -30,7 +30,8 @@ Ollama_Tool_Def :: struct {
 
 Ollama_Options :: struct {
 	num_ctx:     int `json:"num_ctx,omitempty"`,
-	temperature: f32 `json:"temperature,omitempty"`,
+	temperature: string `json:"temperature,raw,omitempty"`,
+	top_p:       string `json:"top_p,raw,omitempty"`,
 }
 
 Ollama_Request :: struct {

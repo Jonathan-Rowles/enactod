@@ -84,3 +84,17 @@ build_extra_headers :: proc(provider: ^core.Provider_Config) -> string {
 }
 
 destroy_provider :: proc(provider: ^core.Provider_Config) {}
+
+capabilities_for :: proc(format: API_Format, model: string) -> Capabilities {
+	switch format {
+	case .ANTHROPIC:
+		return anthropic.capabilities(model)
+	case .OPENAI_COMPAT:
+		return openai.capabilities(model)
+	case .OLLAMA:
+		return ollama.capabilities(model)
+	case .GEMINI:
+		return gemini.capabilities(model)
+	}
+	return DEFAULT_CAPABILITIES
+}

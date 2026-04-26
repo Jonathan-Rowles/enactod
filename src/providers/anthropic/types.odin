@@ -57,6 +57,7 @@ Anthropic_Request :: struct {
 	model:       string `json:"model"`,
 	max_tokens:  int `json:"max_tokens"`,
 	temperature: string `json:"temperature,raw,omitempty"`,
+	top_p:       string `json:"top_p,raw,omitempty"`,
 	thinking:    Anthropic_Thinking `json:"thinking,omitempty"`,
 	stream:      bool `json:"stream,omitempty"`,
 	system:      []Anthropic_Text_Block `json:"system,omitempty"`,

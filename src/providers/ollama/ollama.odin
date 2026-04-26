@@ -23,6 +23,7 @@ to_request :: proc(
 	entries: []c.Chat_Entry,
 	tools: []c.Tool_Def,
 	model: string,
+	caps: c.Capabilities,
 	temperature: f32,
 	stream: bool,
 	thinking_budget: Maybe(int),
@@ -34,18 +35,28 @@ to_request :: proc(
 		messages[i] = to_message(entry, allocator)
 	}
 
-	wire_tools := make([]Ollama_Tool_Def, len(tools), allocator)
-	for tool, i in tools {
-		wire_tools[i] = to_tool(tool)
+	wire_tools: []Ollama_Tool_Def
+	if caps.supports_tools && len(tools) > 0 {
+		wire_tools = make([]Ollama_Tool_Def, len(tools), allocator)
+		for tool, i in tools {
+			wire_tools[i] = to_tool(tool)
+		}
 	}
 
 	think: string
-	if budget, enabled := thinking_budget.?; enabled {
+	if budget, enabled := thinking_budget.?; enabled && caps.supports_thinking {
 		think = "true" if budget != 0 else "false"
 	}
 
 	ctx := num_ctx
 	if ctx <= 0 do ctx = DEFAULT_NUM_CTX
+
+	options := Ollama_Options {
+		num_ctx = ctx,
+	}
+	if caps.supports_temperature {
+		options.temperature = fmt.aprintf("%f", temperature, allocator = allocator)
+	}
 
 	return Ollama_Request {
 		model = model,
@@ -53,7 +64,7 @@ to_request :: proc(
 		think = think,
 		messages = messages,
 		tools = wire_tools,
-		options = Ollama_Options{num_ctx = ctx, temperature = temperature},
+		options = options,
 	}
 }
 
@@ -106,7 +117,6 @@ parse_response :: proc(
 	}
 
 	result: c.Parsed_Response
-	// Read usage BEFORE unmarshal — same gen-ojson short-circuit as openai.
 	result.usage.input_tokens, _ = ojson.read_int(reader, "prompt_eval_count")
 	result.usage.output_tokens, _ = ojson.read_int(reader, "eval_count")
 

@@ -232,10 +232,15 @@ unmarshal_open_ai_request_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (resu
 	if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
 
 	{
-		val: f64
-		val, err = oj.read_f64_elem(r, elem, "temperature")
-		if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
-		if err == .OK do result.temperature = f32(val)
+		raw_val, raw_err := oj.read_raw_elem(r, elem, "temperature")
+		if raw_err != .OK && raw_err != .Key_Not_Found && raw_err != .Type_Mismatch do return result, raw_err
+		if raw_err == .OK do result.temperature = raw_val
+	}
+
+	{
+		raw_val, raw_err := oj.read_raw_elem(r, elem, "top_p")
+		if raw_err != .OK && raw_err != .Key_Not_Found && raw_err != .Type_Mismatch do return result, raw_err
+		if raw_err == .OK do result.top_p = raw_val
 	}
 
 	result.max_tokens, err = oj.read_int_elem(r, elem, "max_tokens")
@@ -272,7 +277,7 @@ unmarshal_open_ai_request_elem :: proc(r: ^oj.Reader, elem: oj.Element) -> (resu
 }
 
 is_zero_open_ai_request :: proc(v: OpenAI_Request) -> bool {
-	return v.model == "" && v.temperature == 0 && v.max_tokens == 0 && !v.stream && len(v.messages) == 0 && len(v.tools) == 0
+	return v.model == "" && v.temperature == "" && v.top_p == "" && v.max_tokens == 0 && !v.stream && len(v.messages) == 0 && len(v.tools) == 0
 }
 
 // Marshals OpenAI_Request to JSON
@@ -280,8 +285,14 @@ marshal_open_ai_request :: proc(w: ^oj.Writer, value: OpenAI_Request) {
 	oj.write_object_start(w)
 	oj.write_key(w, "model")
 	oj.write_string(w, value.model)
-	oj.write_key(w, "temperature")
-	oj.write_f32(w, value.temperature)
+	if value.temperature != "" {
+		oj.write_key(w, "temperature")
+		oj.write_raw(w, value.temperature)
+	}
+	if value.top_p != "" {
+		oj.write_key(w, "top_p")
+		oj.write_raw(w, value.top_p)
+	}
 	oj.write_key(w, "max_tokens")
 	oj.write_int(w, value.max_tokens)
 	if value.stream {
