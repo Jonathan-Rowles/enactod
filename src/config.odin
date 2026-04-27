@@ -4,22 +4,23 @@ import "../pkgs/actod"
 import "core:time"
 
 Agent_Config :: struct {
-	llm:                     LLM_Config,
-	system_prompt:           string,
-	tools:                   []Tool,
-	children:                [dynamic]actod.SPAWN,
-	worker_count:            int,
-	max_turns:               int,
-	max_tool_calls_per_turn: int,
-	tool_timeout:            time.Duration,
-	stream:                  bool,
-	forward_events:          bool,
-	forward_thinking:        bool,
-	tool_continuation:       string,
-	validate_tool_args:      bool,
-	trace_sink:              Trace_Sink,
-	accumulate_history:      bool,
-	restart_policy:          actod.Restart_Policy,
+	llm:                           LLM_Config,
+	system_prompt:                 string,
+	tools:                         []Tool,
+	children:                      [dynamic]actod.SPAWN,
+	worker_count:                  int,
+	max_turns:                     int,
+	max_tool_calls_per_turn:       int,
+	tool_timeout:                  time.Duration,
+	stream:                        bool,
+	forward_events:                bool,
+	forward_thinking:              bool,
+	tool_continuation:             string,
+	validate_tool_args:            bool,
+	trace_sink:                    Trace_Sink,
+	accumulate_history:            bool,
+	auto_compact_threshold_tokens: int,
+	restart_policy:                actod.Restart_Policy,
 }
 
 DEFAULT_WORKER_COUNT :: 2
@@ -45,6 +46,7 @@ make_agent_config :: proc(
 	validate_tool_args: bool = true,
 	trace_sink: Trace_Sink = {},
 	accumulate_history: bool = true,
+	auto_compact_threshold_tokens: int = 0,
 	restart_policy: actod.Restart_Policy = .PERMANENT,
 ) -> Agent_Config {
 	return Agent_Config {
@@ -63,6 +65,7 @@ make_agent_config :: proc(
 		validate_tool_args = validate_tool_args,
 		trace_sink = trace_sink,
 		accumulate_history = accumulate_history,
+		auto_compact_threshold_tokens = auto_compact_threshold_tokens,
 		restart_policy = restart_policy,
 	}
 }

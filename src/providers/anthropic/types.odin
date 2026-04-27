@@ -22,16 +22,18 @@ Anthropic_Thinking_Block :: struct {
 }
 
 Anthropic_Tool_Use_Block :: struct {
-	type:  string `json:"type,tag=tool_use"`,
-	id:    string `json:"id"`,
-	name:  string `json:"name"`,
-	input: string `json:"input,raw"`,
+	type:          string `json:"type,tag=tool_use"`,
+	id:            string `json:"id"`,
+	name:          string `json:"name"`,
+	input:         string `json:"input,raw"`,
+	cache_control: Anthropic_Cache_Control `json:"cache_control,omitempty"`,
 }
 
 Anthropic_Tool_Result_Block :: struct {
-	type:        string `json:"type,tag=tool_result"`,
-	tool_use_id: string `json:"tool_use_id"`,
-	content:     string `json:"content"`,
+	type:          string `json:"type,tag=tool_result"`,
+	tool_use_id:   string `json:"tool_use_id"`,
+	content:       string `json:"content"`,
+	cache_control: Anthropic_Cache_Control `json:"cache_control,omitempty"`,
 }
 
 Anthropic_Content_Block :: union {

@@ -65,6 +65,7 @@ Agent_State :: struct {
 	compact_caller:              actod.PID,
 	compact_request_id:          Request_ID,
 	compact_snapshot_len:        int,
+	auto_compact_pending:        bool,
 }
 
 agent_arena :: proc "contextless" (data: ^Agent_State) -> ^vmem.Arena {
@@ -186,6 +187,24 @@ agent_handle_message :: proc(data: ^Agent_State, from: actod.PID, content: any) 
 		handle_history_query(data, msg)
 	case Load_History:
 		handle_load_history(data, msg)
+	case Compact_Result:
+		handle_compact_result(data, msg)
+	}
+}
+
+handle_compact_result :: proc(data: ^Agent_State, msg: Compact_Result) {
+	if msg.is_error {
+		log.warnf(
+			"agent:%s auto-compact failed: %s",
+			data.agent_name,
+			resolve(msg.error_msg),
+		)
+	} else {
+		log.infof(
+			"agent:%s auto-compact done: %d turns -> 1",
+			data.agent_name,
+			msg.old_turns,
+		)
 	}
 }
 
@@ -736,6 +755,11 @@ process_parsed_response :: proc(data: ^Agent_State, parsed: Parsed_Response) {
 	data.total_output_tokens += parsed.usage.output_tokens
 	data.total_cache_creation_tokens += parsed.usage.cache_creation_input_tokens
 	data.total_cache_read_tokens += parsed.usage.cache_read_input_tokens
+
+	if data.config.auto_compact_threshold_tokens > 0 &&
+	   parsed.usage.input_tokens >= data.config.auto_compact_threshold_tokens {
+		data.auto_compact_pending = true
+	}
 
 	content_s := resolve(parsed.content)
 	thinking_s := resolve(parsed.thinking)
@@ -1512,7 +1536,6 @@ emit_request_end :: proc(data: ^Agent_State, detail: Text, is_error: bool) {
 
 reset_agent :: proc(data: ^Agent_State) {
 	caller := data.caller_pid
-	data.phase = .IDLE
 	data.current_req = 0
 	data.parent_request_id = 0
 	data.caller_pid = 0
@@ -1536,4 +1559,31 @@ reset_agent :: proc(data: ^Agent_State) {
 			arena_reset(&data.arena)
 		}
 	}
+
+	if data.auto_compact_pending &&
+	   data.config.accumulate_history &&
+	   len(data.messages) > 0 {
+		data.auto_compact_pending = false
+		trigger_auto_compact(data)
+		return
+	}
+
+	data.phase = .IDLE
+}
+
+trigger_auto_compact :: proc(data: ^Agent_State) {
+	log.infof(
+		"agent:%s auto-compact triggered (threshold=%d tokens)",
+		data.agent_name,
+		data.config.auto_compact_threshold_tokens,
+	)
+
+	data.compact_caller = actod.get_self_pid()
+	data.compact_request_id = max(Request_ID)
+	data.compact_snapshot_len = len(data.messages)
+
+	append_user_entry(&data.messages, COMPACT_DEFAULT_INSTRUCTION)
+
+	data.phase = .AWAITING_COMPACT
+	dispatch_compact_call(data)
 }

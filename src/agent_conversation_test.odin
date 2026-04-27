@@ -152,6 +152,106 @@ test_build_anthropic_no_cache_mode_no_cache_control :: proc(t: ^testing.T) {
 }
 
 @(test)
+test_build_anthropic_rolling_breakpoint_on_user :: proc(t: ^testing.T) {
+	context.allocator = context.temp_allocator
+	entries: [dynamic]Chat_Entry
+	append_user_entry(&entries, "hi there")
+
+	json := build_anthropic(entries[:], cache_mode = .EPHEMERAL)
+
+	testing.expect(t, strings.contains(json, `"text":"hi there"`))
+	user_idx := strings.index(json, `"text":"hi there"`)
+	testing.expect(t, user_idx >= 0)
+	rest := json[user_idx:]
+	testing.expect(
+		t,
+		strings.contains(rest, `"cache_control":{"type":"ephemeral"}`),
+		"rolling breakpoint should land on the last user text block",
+	)
+}
+
+@(test)
+test_build_anthropic_rolling_breakpoint_on_tool_result :: proc(t: ^testing.T) {
+	context.allocator = context.temp_allocator
+	entries: [dynamic]Chat_Entry
+	append_user_entry(&entries, "do the thing")
+	append_assistant_entry(
+		&entries,
+		text(""),
+		[]Parsed_Tool_Call {
+			{id = text("call_1"), name = text("get_time"), arguments = text("{}")},
+		},
+	)
+	append_tool_result_entry(&entries, text("call_1"), text("12:00"))
+
+	json := build_anthropic(entries[:], cache_mode = .EPHEMERAL)
+
+	tr_idx := strings.index(json, `"type":"tool_result"`)
+	testing.expect(t, tr_idx >= 0, "tool_result block should be emitted")
+	rest := json[tr_idx:]
+	testing.expect(
+		t,
+		strings.contains(rest, `"cache_control":{"type":"ephemeral"}`),
+		"rolling breakpoint should land on the tool_result block",
+	)
+}
+
+@(test)
+test_build_anthropic_cache_blocks_after_plain_user_gets_breakpoint :: proc(t: ^testing.T) {
+	context.allocator = context.temp_allocator
+	entries: [dynamic]Chat_Entry
+	append_user_entry(&entries, "first turn")
+	append_assistant_entry(&entries, text("first reply"))
+	append_user_entry_cached(&entries, []Text{text("docs"), text("query")})
+
+	json := build_anthropic(entries[:], cache_mode = .EPHEMERAL)
+
+	query_idx := strings.index(json, `"text":"query"`)
+	testing.expect(t, query_idx >= 0)
+	rest := json[query_idx:]
+	testing.expect(
+		t,
+		strings.contains(rest, `"cache_control":{"type":"ephemeral"}`),
+		"second user's cache_blocks should still get a breakpoint",
+	)
+}
+
+@(test)
+test_build_anthropic_rolling_skips_thinking_block :: proc(t: ^testing.T) {
+	context.allocator = context.temp_allocator
+	entries: [dynamic]Chat_Entry
+	append_user_entry(&entries, "ask")
+	append_assistant_entry(
+		&entries,
+		text("answer"),
+		nil,
+		text("a long chain of thought"),
+		text("sigvalue"),
+		text("claude-sonnet-4-5-20250929"),
+	)
+
+	json := build_anthropic(
+		entries[:],
+		cache_mode = .EPHEMERAL,
+		thinking_budget = 4096,
+		model = "claude-sonnet-4-5-20250929",
+	)
+
+	thinking_idx := strings.index(json, `"type":"thinking"`)
+	if thinking_idx < 0 {
+		return
+	}
+	text_idx := strings.index(json, `"text":"answer"`)
+	testing.expect(t, text_idx >= 0)
+	rest := json[text_idx:]
+	testing.expect(
+		t,
+		strings.contains(rest, `"cache_control":{"type":"ephemeral"}`),
+		"rolling breakpoint should land on the text block, not the thinking block",
+	)
+}
+
+@(test)
 test_build_anthropic_thinking_budget_enables_thinking_block :: proc(t: ^testing.T) {
 	context.allocator = context.temp_allocator
 	entries: [dynamic]Chat_Entry

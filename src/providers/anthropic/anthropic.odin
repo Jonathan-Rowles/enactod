@@ -18,6 +18,36 @@ build_extra_headers :: proc(sb: ^strings.Builder) {
 	strings.write_string(sb, "anthropic-version: 2023-06-01")
 }
 
+apply_rolling_cache_breakpoint :: proc(msgs: []Anthropic_Message) {
+	if len(msgs) == 0 {
+		return
+	}
+	last := &msgs[len(msgs) - 1]
+	if len(last.content) == 0 {
+		return
+	}
+	for j := len(last.content) - 1; j >= 0; j -= 1 {
+		switch &v in last.content[j] {
+		case Anthropic_Text_Block:
+			v.cache_control = {
+				type = "ephemeral",
+			}
+			return
+		case Anthropic_Tool_Use_Block:
+			v.cache_control = {
+				type = "ephemeral",
+			}
+			return
+		case Anthropic_Tool_Result_Block:
+			v.cache_control = {
+				type = "ephemeral",
+			}
+			return
+		case Anthropic_Thinking_Block:
+		}
+	}
+}
+
 to_request :: proc(
 	entries: []c.Chat_Entry,
 	tools: []c.Tool_Def,
@@ -74,7 +104,7 @@ to_request :: proc(
 	msgs.allocator = allocator
 
 	i := 0
-	first_user_emitted := false
+	user_cache_breakpoint_used := false
 	for i < len(entries) {
 		entry := entries[i]
 		if entry.role == .SYSTEM {
@@ -145,7 +175,7 @@ to_request :: proc(
 		if entry.role == .USER && len(entry.cache_blocks) > 0 {
 			blocks := make([]Anthropic_Content_Block, len(entry.cache_blocks), allocator)
 			last := len(entry.cache_blocks) - 1
-			apply_cache_control := cache_enabled && !first_user_emitted
+			apply_cache_control := cache_enabled && !user_cache_breakpoint_used
 			for cb, idx in entry.cache_blocks {
 				block := Anthropic_Text_Block {
 					text = c.resolve(cb),
@@ -158,12 +188,12 @@ to_request :: proc(
 				blocks[idx] = block
 			}
 			append(&msgs, Anthropic_Message{role = "user", content = blocks})
-			first_user_emitted = true
+			if apply_cache_control {
+				user_cache_breakpoint_used = true
+			}
 			i += 1
 			continue
 		}
-
-		if entry.role == .USER {first_user_emitted = true}
 
 		role := entry.role == .ASSISTANT ? "assistant" : "user"
 		if entry.role == .ASSISTANT && emit_thinking {
@@ -187,6 +217,10 @@ to_request :: proc(
 	}
 
 	req.messages = msgs[:]
+
+	if cache_enabled {
+		apply_rolling_cache_breakpoint(msgs[:])
+	}
 
 	wire_tools := make([]Anthropic_Tool, len(tools), allocator)
 	for tool, idx in tools {

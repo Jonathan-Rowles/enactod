@@ -218,11 +218,19 @@ unmarshal_anthropic_tool_use_block_elem :: proc(r: ^oj.Reader, elem: oj.Element)
 		if raw_err == .OK do result.input = raw_val
 	}
 
+	{
+		nested_elem, nested_err := oj.obj_element_from(r, elem, "cache_control")
+		if nested_err == .OK {
+			result.cache_control, err = unmarshal_anthropic_cache_control_elem(r, nested_elem)
+			if err != .OK do return
+		}
+	}
+
 	return
 }
 
 is_zero_anthropic_tool_use_block :: proc(v: Anthropic_Tool_Use_Block) -> bool {
-	return v.type == "" && v.id == "" && v.name == "" && v.input == ""
+	return v.type == "" && v.id == "" && v.name == "" && v.input == "" && is_zero_anthropic_cache_control(v.cache_control)
 }
 
 // Marshals Anthropic_Tool_Use_Block to JSON
@@ -236,6 +244,10 @@ marshal_anthropic_tool_use_block :: proc(w: ^oj.Writer, value: Anthropic_Tool_Us
 	oj.write_string(w, value.name)
 	oj.write_key(w, "input")
 	oj.write_raw(w, value.input)
+	if !is_zero_anthropic_cache_control(value.cache_control) {
+		oj.write_key(w, "cache_control")
+		marshal_anthropic_cache_control(w, value.cache_control)
+	}
 	oj.write_object_end(w)
 }
 
@@ -258,11 +270,19 @@ unmarshal_anthropic_tool_result_block_elem :: proc(r: ^oj.Reader, elem: oj.Eleme
 	result.content, err = oj.read_string_elem(r, elem, "content")
 	if err != .OK && err != .Key_Not_Found && err != .Type_Mismatch do return
 
+	{
+		nested_elem, nested_err := oj.obj_element_from(r, elem, "cache_control")
+		if nested_err == .OK {
+			result.cache_control, err = unmarshal_anthropic_cache_control_elem(r, nested_elem)
+			if err != .OK do return
+		}
+	}
+
 	return
 }
 
 is_zero_anthropic_tool_result_block :: proc(v: Anthropic_Tool_Result_Block) -> bool {
-	return v.type == "" && v.tool_use_id == "" && v.content == ""
+	return v.type == "" && v.tool_use_id == "" && v.content == "" && is_zero_anthropic_cache_control(v.cache_control)
 }
 
 // Marshals Anthropic_Tool_Result_Block to JSON
@@ -274,6 +294,10 @@ marshal_anthropic_tool_result_block :: proc(w: ^oj.Writer, value: Anthropic_Tool
 	oj.write_string(w, value.tool_use_id)
 	oj.write_key(w, "content")
 	oj.write_string(w, value.content)
+	if !is_zero_anthropic_cache_control(value.cache_control) {
+		oj.write_key(w, "cache_control")
+		marshal_anthropic_cache_control(w, value.cache_control)
+	}
 	oj.write_object_end(w)
 }
 

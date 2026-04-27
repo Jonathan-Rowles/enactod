@@ -54,21 +54,22 @@ The agent never addresses workers directly. It sends `LLM_Call` to `ratelim:<nam
 
 ```odin
 enact.make_agent_config(
-    llm                     = enact.anthropic(key, .Claude_Sonnet_4_5),  // required
-    system_prompt           = "",
-    tools                   = tools,
-    children                = nil,
-    worker_count            = 2,
-    max_turns               = 10,
-    max_tool_calls_per_turn = 20,
-    tool_timeout            = 30 * time.Second,
-    stream                  = false,
-    forward_events          = false,
-    forward_thinking        = true,
-    tool_continuation       = "",
-    validate_tool_args      = true,
-    accumulate_history      = true,
-    trace_sink              = {},
+    llm                           = enact.anthropic(key, .Claude_Sonnet_4_5),  // required
+    system_prompt                 = "",
+    tools                         = tools,
+    children                      = nil,
+    worker_count                  = 2,
+    max_turns                     = 10,
+    max_tool_calls_per_turn       = 20,
+    tool_timeout                  = 30 * time.Second,
+    stream                        = false,
+    forward_events                = false,
+    forward_thinking              = true,
+    tool_continuation             = "",
+    validate_tool_args            = true,
+    accumulate_history            = true,
+    auto_compact_threshold_tokens = 0,  // 0 = disabled
+    trace_sink                    = {},
 )
 ```
 
@@ -119,6 +120,12 @@ For concurrency, spawn more agents (one per caller, gateway pattern). For fan ou
 `max_turns` bounds the LLM → tools → LLM loop. When hit, the agent returns a truncated response containing the last assistant text prefixed with `[truncated at turn limit N]`. On the penultimate turn the agent injects a final turn user message telling the model to wrap up.
 
 `max_tool_calls_per_turn` caps per turn tool dispatches. Excess calls are reported to the model as errors.
+
+## Auto compact
+
+Set `auto_compact_threshold_tokens > 0` to have the agent automatically compact its history when an LLM call's `input_tokens` reaches the threshold. After the current request completes the agent transitions straight to `AWAITING_COMPACT`, runs one extra LLM call to summarise the conversation, and replaces the chat history with the summary. New requests during the compact window are rejected with `agent is busy`.
+
+`0` disables auto compact. Manual compact via `compact_history(...)` is always available.
 
 ## Destroying
 

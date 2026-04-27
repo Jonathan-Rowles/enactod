@@ -599,6 +599,7 @@ make_agent_config :: proc(
 	validate_tool_args: bool = true,
 	trace_sink: Trace_Sink = {},
 	accumulate_history: bool = true,
+	auto_compact_threshold_tokens: int = 0,
 	restart_policy: Restart_Policy = .PERMANENT,
 ) -> Agent_Config {
 	return impl.make_agent_config(
@@ -617,6 +618,7 @@ make_agent_config :: proc(
 		validate_tool_args,
 		trace_sink,
 		accumulate_history,
+		auto_compact_threshold_tokens,
 		restart_policy,
 	)
 }

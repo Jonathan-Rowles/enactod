@@ -30,6 +30,15 @@ Cache_Mode :: enum u8 {
 
 Unsupported combinations pass through silently, not as an error.
 
+When `cache_mode = .EPHEMERAL` is set, enactod places breakpoints at:
+
+1. End of system prompt.
+2. End of tool definitions (last tool).
+3. End of the most recent `cache_blocks` user entry (if any).
+4. End of the last message in the conversation (rolling breakpoint).
+
+Breakpoint 4 is the agent loop win: each turn's tool results land in cache for the next turn, so a long tool loop reads its own prefix back instead of reprocessing it. Anthropic accepts up to 4 breakpoints; that is the budget enactod targets.
+
 ## Sending cache blocks
 
 ```odin
